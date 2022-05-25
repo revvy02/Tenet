@@ -1,0 +1,6 @@
+{
+  "name": "stellar",
+  "tree": {
+    "$path": "src"
+  }
+}

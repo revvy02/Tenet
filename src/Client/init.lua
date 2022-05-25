@@ -1,58 +1,67 @@
-local ProximityPromptService = game:GetService("ProximityPromptService")
-local Slick = require(script.Parent.Parent.Parent.Slick)
-local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
+local Promise = require(script.Parent.Parent.Promise)
+local Cleaner = require(script.Parent.Parent.Cleaner)
+local Slick = require(script.Parent.Parent.Slick)
+
+local constructors = {
+    ClientSignals = require(script.ClientSignal),
+    ClientCallbacks = require(script.ClientCallback),
+    ClientDynamicStores = require(script.ClientDynamicStore),
+    ClientDynamicStreams = require(script.ClientDynamicStream),
+    ClientStaticStores = require(script.ClientStaticStore),
+    ClientStaticStreams = require(script.ClientStaticStream),
+}
 
 local Client = {}
 Client.__index = Client
 
-local Constructors = {
-    NetworkSignals = require(script.Parent.NetworkSignal),
-    NetworkCallbacks = require(script.Parent.NetworkCallback),
-    NetworkChannelStores = require(script.Parent.NetworkChannelStore),
-    NetworkChannelStreams = require(script.Parent.NetworkChannelStream),
-    NetworkStaticStores = require(script.Parent.NetworkStaticStore),
-    NetworkStaticStreams = require(script.Parent.NetworkStaticStream),
-}
-
-function Client.new(directory)
+function Client.new(folder)
     local self = setmetatable({}, Client)
 
     self._cleaner = Cleaner.new()
+
     self._elements = self._cleaner:add(Slick.Store.new())
-
-    local function subdirectoryAdded(subdirectory)
-        local subdir = subdirectory.Name
-
-        self._elements:dispatch(subdir, "setValue", {})
-        self._cleaner:set(subdir, Cleaner.new())
-
-        local function added(object)
-            local element = Constructors[subdir].new(object)
-            local name = object.Name
-
-            self._elements:dispatch(subdir, "setIndex", name, Constructors[subdir].new(element))
-            self._cleaner:get(subdir):set(name, object)
-        end
-
-        local function removed(object)
-            local name = object.Name
-
-            self._elements:dispatch(subdir, "setIndex", name, nil)
-            self._elements:get(subdir):finalize(object.Name)
-        end
-
-        self._cleaner:get(subdir):add(subdirectory.ChildAdded:Connect(added))
-        self._cleaner:get(subdir):add(subdirectory.ChildRemoved:Connect(removed))
+    
+    for _, directory in pairs(folder:GetChildren()) do
+        self:_directoryAdded(directory)
     end
 
-    local function subdirectoryRemoved(subdirectory)
-        self._cleaner:finalize(subdirectory.Name)
-    end
+    self._cleaner:add(folder.ChildAdded:Connect(function(directory)
+        self:_directoryAdded(directory)
+    end))
 
-    self._cleaner:add(directory.ChildAdded:Connect(subdirectoryAdded))
-    self._cleaner:add(directory.ChildRemoved:Connect(subdirectoryRemoved))
+    self._cleaner:add(folder.ChildRemoved:Connect(function(directory)
+        self:_directoryRemoved(directory)
+    end))
 
     return self
+end
+
+function Client:_directoryAdded(directory)
+    local cleaner = self._cleaner:set(directory, Cleaner.new())
+
+    self._elements:rawset(directory, {})
+
+    local function remotesAdded(remotes)
+        self._elements:dispatch(directory, "setIndex", remotes.Name, cleaner:set(remotes.Name, constructors[directory].new({
+            remoteEvent = remotes:FindFirstChild("RemoteEvent"),
+            remoteFunction = remotes:FindFirstChild("RemoteFunction"),
+        })))
+    end
+
+    local function remotesRemoved(remotes)
+        cleaner:finalize(remotes.Name)
+    end
+
+    for _, remotes in pairs(directory:GetChildren()) do
+        remotesAdded(remotes)
+    end
+
+    cleaner:add(directory.ChildAdded:Connect(remotesAdded))
+    cleaner:add(directory.ChildRemoved:Connect(remotesRemoved))
+end
+
+function Client:_directoryRemoved(directory)
+    self._cleaner:finalize(directory)
 end
 
 function Client:_getElementAsync(directory, name)
@@ -60,41 +69,39 @@ function Client:_getElementAsync(directory, name)
         return self._elements:get(directory)[name]
     end
 
-    return Promise.fromEvent(self._elements:getReducedSignal(directory, "setIndex"), function(newName, element)
-        return newName == name
+    return Promise.fromEvent(self._elements:getReducedSignal(directory), function(reducer, elementName)
+        return reducer == "setIndex" and elementName == name
     end):andThen(function()
         return self._elements:get(directory)[name]
     end)
 end
 
-function Client:getNetworkSignalAsync(name)
-    return self:_getElementAsync("NetworkSignals", name)
+function Client:getClientSignalAsync(name)
+    return self:_getElementAsync("ClientSignals", name)
 end
 
-function Client:getNetworkCallbackAsync(name)
-    return self:_getElementAsync("NetworkCallbacks", name)
+function Client:getClientCallbackAsync(name)
+    return self:_getElementAsync("ClientSignals", name)
 end
 
-function Client:getNetworkChannelStoreAsync(name)
-    return self:_getElementAsync("NetworkChannelStores", name)
+function Client:getClientDynamicStoreAsync(name)
+    return self:_getElementAsync("ClientSignals", name)
 end
 
-function Client:getNetworkChannelStreamAsync(name)
-    return self:_getElementAsync("NetworkChannelStreams", name)
+function Client:getClientDynamicStreamAsync(name)
+    return self:_getElementAsync("ClientSignals", name)
 end
 
-function Client:getNetworkStaticStoreAsync(name)
-    return self:_getElementAsync("NetworkStaticStores", name)
+function Client:getClientStoreAsync(name)
+    return self:_getElementAsync("ClientSignals", name)
 end
 
-function Client:getNetworkStaticStreamAsync(name)
-    return self:_getElementAsync("NetworkStaticStreams", name)
+function Client:getClientStreamAsync(name)
+    return self:_getElementAsync("ClientSignals", name)
 end
 
 function Client:destroy()
     self._cleaner:destroy()
 end
 
-
-
-return Client.new()
+return Client

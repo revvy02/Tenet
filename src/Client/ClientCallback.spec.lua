@@ -1,37 +1,40 @@
 return function()
     local MockNetwork = require(script.Parent.Parent.Parent.MockNetwork)
+    local Promise = require(script.Parent.Parent.Parent.Promise)
 
     local ClientCallback = require(script.Parent.ClientCallback)
-    local ServerCallback = require(script.Parent.Parent.Server.ServerCallback)
+    
+    local function createClientCallback()
+        local remoteFunction = MockNetwork.MockRemoteFunction.new()
+
+        local clientCallback = ClientCallback.new({
+            remoteFunction = remoteFunction,
+        })
+
+        return clientCallback, function()
+            clientCallback:destroy()
+            remoteFunction:destroy()
+        end, remoteFunction
+    end
 
     describe("ClientCallback.new", function()
         it("should create a new ClientCallback", function()
-            local remoteFunction = MockNetwork.MockRemoteFunction.new()
-
-            local clientCallback = ClientCallback.new({
-                remoteFunction = remoteFunction,
-            })
+            local clientCallback, cleanup = createClientCallback()
             
             expect(clientCallback).to.be.ok()
-            expect(clientCallback.is(clientCallback)).to.equal(true)
+            expect(ClientCallback.is(clientCallback)).to.equal(true)
 
-            remoteFunction:destroy()
-            clientCallback:destroy()
+            cleanup()
         end)
     end)
 
     describe("ClientCallback.is", function()
         it("should return true if the passed object is a ClientCallback", function()
-            local remoteFunction = MockNetwork.MockRemoteFunction.new()
-
-            local clientCallback = ClientCallback.new({
-                remoteFunction = remoteFunction,
-            })
+            local clientCallback, cleanup = createClientCallback()
 
             expect(ClientCallback.is(clientCallback)).to.equal(true)
 
-            remoteFunction:destroy()
-            clientCallback:destroy()
+            cleanup()
         end)
 
         it("should return false if the passed object is not a ClientCallback", function()
@@ -43,62 +46,54 @@ return function()
 
 
 
-    describe("ClientCallback:setClientCallback", function()
+    describe("ClientCallback:setCallback", function()
         it("should resolve any queued requests", function()
-            local remoteFunction = MockNetwork.MockRemoteFunction.new()
+            local clientCallback, cleanup, remoteFunction = createClientCallback()
             local count = 0
 
-            local clientCallback = ClientCallback.new({
-                remoteFunction = remoteFunction,
-            })
-            
             task.spawn(function()
-                count += remoteFunction:InvokeClient(1)
+                local new = remoteFunction:invokeClient(nil, 1)
+                count += new
             end)
 
             task.spawn(function()
-                count += remoteFunction:InvokeClient(2)
+                local new = remoteFunction:invokeClient(nil, 2)
+                count += new
             end)
 
-            clientCallback:setClientCallback(function(num)
+            clientCallback:setCallback(function(num)
                 return num * 2
             end)
 
             expect(count).to.equal(6)
 
-            remoteFunction:destroy()
-            clientCallback:destroy()
+            cleanup()
         end)
     end)
 
-    describe("ClientCallback:flushClient", function()
-        it("should ignore any queued requests when the callback is set", function()
-            local remoteFunction = MockNetwork.MockRemoteFunction.new()
+    describe("ClientCallback:flush", function()
+        it("should flush any queued requests so they aren't handled when handler is set", function()
+            local clientCallback, cleanup, remoteFunction = createClientCallback()
             local ran0, ran1 = false, false
-
-            local clientCallback = ClientCallback.new({
-                remoteFunction = remoteFunction,
-            })
             
             task.spawn(function()
-                ran0 = remoteFunction:InvokeClient()
+                ran0 = remoteFunction:invokeClient(nil)
             end)
+
+            clientCallback:flush()
 
             task.spawn(function()
-                ran1 = remoteFunction:InvokeClient()
+                ran1 = remoteFunction:invokeClient(nil)
             end)
 
-            clientCallback:flushClient()
-
-            clientCallback:setClientCallback(function(num)
+            clientCallback:setCallback(function(num)
                 return true
             end)
 
             expect(ran0).to.equal(false)
-            expect(ran1).to.equal(false)
+            expect(ran1).to.equal(true)
 
-            remoteFunction:destroy()
-            clientCallback:destroy()
+            cleanup()
         end)
     end)
 
@@ -106,33 +101,27 @@ return function()
 
 
     describe("ClientCallback:callServerAsync", function()
-        it("should return the server response", function()
-            local remoteFunction = MockNetwork.MockRemoteFunction.new()
+        it("should return a promise that resolves with the server response", function()
+            local clientCallback, cleanup, remoteFunction = createClientCallback()
 
             remoteFunction.OnServerInvoke = function()
-                return true
+                return 1
             end
 
-            local clientCallback = ClientCallback.new({
-                remoteFunction = remoteFunction,
-            })
-            
-            expect(clientCallback:callServerAsync():await()).to.equal(true)
+            local response = clientCallback:callServerAsync()
 
-            remoteFunction:destroy()
-            clientCallback:destroy()
+            expect(Promise.is(response)).to.equal(true)
+            expect(select(2, response:await())).to.equal(1)
+
+            cleanup()
         end)
 
         it("should queue request if the server callback isn't set and resolve once it is", function()
-            local remoteFunction = MockNetwork.MockRemoteFunction.new()
+            local clientCallback, cleanup, remoteFunction = createClientCallback()
             local response = false
 
-            local clientCallback = ClientCallback.new({
-                remoteFunction = remoteFunction,
-            })
-
             task.spawn(function()
-                response = clientCallback:callServerAsync():await()
+                response = select(2, clientCallback:callServerAsync():await())
             end)
 
             expect(response).to.equal(false)
@@ -143,8 +132,7 @@ return function()
 
             expect(response).to.equal(true)
 
-            remoteFunction:destroy()
-            clientCallback:destroy()
+            cleanup()
         end)
     end)
 
@@ -156,14 +144,9 @@ return function()
 
     describe("ClientCallback:destroy", function()
         it("should set destroyed field to true", function()
-            local remoteFunction = MockNetwork.MockRemoteFunction.new()
+            local clientCallback, cleanup, remoteFunction = createClientCallback()
 
-            local clientCallback = ClientCallback.new({
-                remoteFunction = remoteFunction,
-            })
-            
-            remoteFunction:destroy()
-            clientCallback:destroy()
+            cleanup()
 
             expect(clientCallback.destroyed).to.equal(true)
         end)

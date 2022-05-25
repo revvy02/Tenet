@@ -1,16 +1,14 @@
 --[[
-    -- 1
-    A static store where keys cannot be subscribed to. Good if clients don't know what keys to subscribe to
+    ClientCallback behavior to define
 
-    -- 2
-    A channelstore where players can be subscribed to keys. Good if clients know what keys to subscribe to
-    (need to have sanity checks on server that will verify the keys that are subscribed to)
-
-    -- 3
-    A stream of static stores that have "owners".
-
-    -- 4
-    A stream of channel stores that have "owners".
-
+    what happens to request to client when client disconnects before response
+    what happens to request to server when client disconnects before response
 
 ]]
+
+local Stellar = {
+    Client = require(script.Client),
+    Server = require(script.Server),
+    Middleware = require(script.Middleware),
+    StoreBehavior = require(script.StoreBehavior),
+}

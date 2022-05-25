@@ -2,21 +2,20 @@ return function()
     local MockNetwork = require(script.Parent.Parent.Parent.MockNetwork)
 
     local ClientSignal = require(script.Parent.ClientSignal)
-    local ServerSignal = require(script.Parent.Parent.Server.ServerSignal)
     
     describe("ClientSignal.new", function()
         it("should create a new ClientSignal", function()
             local remoteEvent = MockNetwork.MockRemoteEvent.new()
 
-            local networkSignal = ClientSignal.new({
+            local clientSignal = ClientSignal.new({
                 remoteEvent = remoteEvent,
             })
             
-            expect(networkSignal).to.be.ok()
-            expect(networkSignal.is(networkSignal)).to.equal(true)
+            expect(clientSignal).to.be.ok()
+            expect(clientSignal.is(clientSignal)).to.equal(true)
 
             remoteEvent:destroy()
-            networkSignal:destroy()
+            clientSignal:destroy()
         end)
     end)
 
@@ -24,14 +23,14 @@ return function()
         it("should return true if the passed object is a ClientSignal", function()
             local remoteEvent = MockNetwork.MockRemoteEvent.new()
 
-            local networkSignal = ClientSignal.new({
+            local clientSignal = ClientSignal.new({
                 remoteEvent = remoteEvent,
             })
 
-            expect(ClientSignal.is(networkSignal)).to.equal(true)
+            expect(ClientSignal.is(clientSignal)).to.equal(true)
 
             remoteEvent:destroy()
-            networkSignal:destroy()
+            clientSignal:destroy()
         end)
 
         it("should return false if the passed object is not a ClientSignal", function()
@@ -43,53 +42,55 @@ return function()
 
 
 
-    describe("ClientSignal:flushClient", function()
-        it("should ignore any flushed packets when an activating connection is made", function()
-            local remoteEvent = MockNetwork.MockRemoteEvent.new()
+    describe("ClientSignal:flush", function()
+        it("should drop flushed packets when an activating connection is made", function()
+            local remoteEvent = MockNetwork.MockRemoteEvent.new("user")
             local count = 0
 
-            local networkSignal = ClientSignal.new({
+            local clientSignal = ClientSignal.new({
                 remoteEvent = remoteEvent,
             })
             
-            remoteEvent:fireClient(1)
-            remoteEvent:fireClient(2)
-            remoteEvent:fireClient(3)
+            remoteEvent:fireClient("user", 1)
+            remoteEvent:fireClient("user", 2)
+            remoteEvent:fireClient("user", 3)
             
-            networkSignal:flush()
+            clientSignal:flush()
 
-            networkSignal:connect(function(num)
+            remoteEvent:fireClient("user", 4)
+
+            clientSignal:connect(function(num)
                 count += num
             end)
 
-            expect(count).to.equal(0)
+            expect(count).to.equal(4)
 
             remoteEvent:destroy()
-            networkSignal:destroy()
+            clientSignal:destroy()
         end)
     end)
 
     describe("ClientSignal:connect", function()
-        it("should handle any queued packets when an activating conection is made", function()
-            local remoteEvent = MockNetwork.MockRemoteEvent.new()
+        it("should receive queued packets when an activating conection is made", function()
+            local remoteEvent = MockNetwork.MockRemoteEvent.new("user")
             local count = 0
 
-            local networkSignal = ClientSignal.new({
+            local clientSignal = ClientSignal.new({
                 remoteEvent = remoteEvent,
             })
 
-            remoteEvent:fireClient(1)
-            remoteEvent:fireClient(2)
-            remoteEvent:fireClient(3)
+            remoteEvent:fireClient("user", 1)
+            remoteEvent:fireClient("user", 2)
+            remoteEvent:fireClient("user", 3)
 
-            networkSignal:connect(function(num)
+            clientSignal:connect(function(num)
                 count += num
             end)
             
             expect(count).to.equal(6)
 
             remoteEvent:destroy()
-            networkSignal:destroy()
+            clientSignal:destroy()
         end)
     end)
 
@@ -101,65 +102,44 @@ return function()
             local remoteEvent = MockNetwork.MockRemoteEvent.new()
             local count = 0
 
-            remoteEvent:connect(function(num)
+            remoteEvent.OnServerEvent:connect(function(_, num)
                 count += num
             end)
 
-            local networkSignal = ClientSignal.new({
+            local clientSignal = ClientSignal.new({
                 remoteEvent = remoteEvent,
             })
 
-            networkSignal:fireServer(1)
-            networkSignal:fireServer(2)
-            networkSignal:fireServer(3)
+            clientSignal:fireServer(1)
+            clientSignal:fireServer(2)
+            clientSignal:fireServer(3)
 
             expect(count).to.equal(6)
 
             remoteEvent:destroy()
-            networkSignal:destroy()
+            clientSignal:destroy()
         end)
 
-        it("should handle queued requests when an activating connection is made", function()
+        it("should queue on server until an activating connection is made", function()
             local remoteEvent = MockNetwork.MockRemoteEvent.new()
             local count = 0
 
-            local networkSignal = ClientSignal.new({
+            local clientSignal = ClientSignal.new({
                 remoteEvent = remoteEvent,
             })
 
-            networkSignal:fireServer(1)
-            networkSignal:fireServer(2)
-            networkSignal:fireServer(3)
+            clientSignal:fireServer(1)
+            clientSignal:fireServer(2)
+            clientSignal:fireServer(3)
 
-            remoteEvent:connect(function(num)
-                count += num    
+            remoteEvent.OnServerEvent:connect(function(_, num)
+                count += num
             end)
             
             expect(count).to.equal(6)
 
             remoteEvent:destroy()
-            networkSignal:destroy()
-        end)
-    end)
-
-
-
-
-
-
-
-    describe("ClientSignal:destroy", function()
-        it("should set destroyed field to true", function()
-            local remoteEvent = MockNetwork.MockRemoteEvent.new()
-
-            local networkSignal = ClientSignal.new({
-                remoteEvent = remoteEvent,
-            })
-            
-            remoteEvent:destroy()
-            networkSignal:destroy()
-
-            expect(networkSignal.destroyed).to.equal(true)
+            clientSignal:destroy()
         end)
     end)
 end
