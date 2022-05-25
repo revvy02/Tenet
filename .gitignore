@@ -1,6 +1,5 @@
-# Project place file
-/Stellar.rbxlx
-
-# Roblox Studio lock files
-/*.rbxlx.lock
-/*.rbxl.lock
+/build
+**/*.rbxlx
+**/*.rbxl
+**/*.rbxlx.lock
+**/*.rbxl.lock
