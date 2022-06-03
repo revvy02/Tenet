@@ -1,99 +1,127 @@
+local MockNetwork = require(script.Parent.Parent.Parent.MockNetwork)
+local Promise = require(script.Parent.Parent.Parent.Promise)
+
+local ClientCallback = require(script.Parent.ClientCallback)
+local ServerCallback = require(script.Parent.Parent.Server.ServerCallback)
+
 return function()
-    local MockNetwork = require(script.Parent.Parent.Parent.MockNetwork)
-    local Promise = require(script.Parent.Parent.Parent.Promise)
-
-    local ClientCallback = require(script.Parent.ClientCallback)
-    
-    local function createClientCallback()
-        local remoteFunction = MockNetwork.MockRemoteFunction.new()
-
-        local clientCallback = ClientCallback.new({
-            remoteFunction = remoteFunction,
-        })
-
-        return clientCallback, function()
-            clientCallback:destroy()
-            remoteFunction:destroy()
-        end, remoteFunction
-    end
-
     describe("ClientCallback.new", function()
         it("should create a new ClientCallback", function()
-            local clientCallback, cleanup = createClientCallback()
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
+
+            local clientCallback = ClientCallback.new({
+                remoteFunction = mockRemoteFunction,
+            })
             
-            expect(clientCallback).to.be.ok()
-            expect(ClientCallback.is(clientCallback)).to.equal(true)
-
-            cleanup()
+            expect(clientCallback).to.be.a("table")
+            expect(getmetatable(clientCallback)).to.equal(ClientCallback)
+            
+            clientCallback:destroy()
+            mockRemoteFunction:destroy()
         end)
     end)
-
-    describe("ClientCallback.is", function()
-        it("should return true if the passed object is a ClientCallback", function()
-            local clientCallback, cleanup = createClientCallback()
-
-            expect(ClientCallback.is(clientCallback)).to.equal(true)
-
-            cleanup()
-        end)
-
-        it("should return false if the passed object is not a ClientCallback", function()
-            expect(ClientCallback.is(false)).to.equal(false)
-            expect(ClientCallback.is(true)).to.equal(false)
-            expect(ClientCallback.is({})).to.equal(false)
-        end)
-    end)
-
-
 
     describe("ClientCallback:setCallback", function()
-        it("should resolve any queued requests", function()
-            local clientCallback, cleanup, remoteFunction = createClientCallback()
+        it("should resolve any queued requests from the server with the response if the callback doesn't error", function()
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
+
+            local clientCallback = ClientCallback.new({
+                remoteFunction = mockRemoteFunction,
+            })
+
+            local serverCallback = ServerCallback.new({
+                remoteFunction = mockRemoteFunction,
+            })
+
             local count = 0
 
-            task.spawn(function()
-                local new = remoteFunction:invokeClient(nil, 1)
-                count += new
-            end)
+            local promise0 = serverCallback:callClientAsync("user", 1)
+            expect(promise0:getStatus()).to.equal(Promise.Status.Started)
 
-            task.spawn(function()
-                local new = remoteFunction:invokeClient(nil, 2)
-                count += new
-            end)
+            local promise1 = serverCallback:callClientAsync("user", 2)
+            expect(promise1:getStatus()).to.equal(Promise.Status.Started)
 
             clientCallback:setCallback(function(num)
                 return num * 2
             end)
 
+            expect(promise0:getStatus()).to.equal(Promise.Status.Resolved)
+            expect(promise1:getStatus()).to.equal(Promise.Status.Resolved)
+
+            count += promise0:expect()
+            count += promise1:expect()
+
             expect(count).to.equal(6)
 
-            cleanup()
+            clientCallback:destroy()
+            serverCallback:destroy()
+            mockRemoteFunction:destroy()
+        end)
+
+        it("should reject any queued requests from the server if the callback errors", function()
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
+
+            local clientCallback = ClientCallback.new({
+                remoteFunction = mockRemoteFunction,
+            })
+
+            local serverCallback = ServerCallback.new({
+                remoteFunction = mockRemoteFunction,
+            })
+
+            local promise0 = serverCallback:callClientAsync("user", "z4321")
+            expect(promise0:getStatus()).to.equal(Promise.Status.Started)
+
+            local promise1 = serverCallback:callClientAsync("user", "z1234")
+            expect(promise1:getStatus()).to.equal(Promise.Status.Started)
+
+            clientCallback:setCallback(function(password)
+                assert(password == "z1234", "Uh oh!")
+
+                return "Yay!"
+            end)
+
+            expect(promise0:getStatus()).to.equal(Promise.Status.Rejected)
+            expect(promise1:getStatus()).to.equal(Promise.Status.Resolved)
+            expect(promise1:expect()).to.equal("Yay!")
+
+            clientCallback:destroy()
+            serverCallback:destroy()
+            mockRemoteFunction:destroy()
         end)
     end)
 
     describe("ClientCallback:flush", function()
-        it("should flush any queued requests so they aren't handled when handler is set", function()
-            local clientCallback, cleanup, remoteFunction = createClientCallback()
-            local ran0, ran1 = false, false
-            
-            task.spawn(function()
-                ran0 = remoteFunction:invokeClient(nil)
-            end)
+        it("should reject any queued requests from server", function()
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
+
+            local clientCallback = ClientCallback.new({
+                remoteFunction = mockRemoteFunction,
+            })
+
+            local serverCallback = ServerCallback.new({
+                remoteFunction = mockRemoteFunction,
+            })
+
+            local promise0 = serverCallback:callClientAsync("user")
+            expect(promise0:getStatus()).to.equal(Promise.Status.Started)
 
             clientCallback:flush()
+            expect(promise0:getStatus()).to.equal(Promise.Status.Rejected)
 
-            task.spawn(function()
-                ran1 = remoteFunction:invokeClient(nil)
-            end)
+            local promise1 = serverCallback:callClientAsync("user")
+            expect(promise1:getStatus()).to.equal(Promise.Status.Started)
 
             clientCallback:setCallback(function(num)
                 return true
             end)
 
-            expect(ran0).to.equal(false)
-            expect(ran1).to.equal(true)
-
-            cleanup()
+            expect(promise1:getStatus()).to.equal(Promise.Status.Resolved)
+            expect(promise1:expect()).to.equal(true)
+            
+            clientCallback:destroy()
+            serverCallback:destroy()
+            mockRemoteFunction:destroy()
         end)
     end)
 
@@ -101,38 +129,82 @@ return function()
 
 
     describe("ClientCallback:callServerAsync", function()
-        it("should return a promise that resolves with the server response", function()
-            local clientCallback, cleanup, remoteFunction = createClientCallback()
+        it("should return a promise that resolves with the response from the server if it doesn't error", function()
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            remoteFunction.OnServerInvoke = function()
+            local clientCallback = ClientCallback.new({
+                remoteFunction = mockRemoteFunction,
+            })
+
+            local serverCallback = ServerCallback.new({
+                remoteFunction = mockRemoteFunction,
+            })
+
+            serverCallback:setCallback(function()
                 return 1
-            end
+            end)
 
-            local response = clientCallback:callServerAsync()
+            local promise = clientCallback:callServerAsync()
 
-            expect(Promise.is(response)).to.equal(true)
-            expect(select(2, response:await())).to.equal(1)
+            expect(Promise.is(promise)).to.equal(true)
+            expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
+            expect(promise:expect()).to.equal(1)
 
-            cleanup()
+            clientCallback:destroy()
+            serverCallback:destroy()
+            mockRemoteFunction:destroy()
+        end)
+
+        it("should return a promise that rejects if the server errors", function()
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
+
+            local clientCallback = ClientCallback.new({
+                remoteFunction = mockRemoteFunction,
+            })
+
+            local serverCallback = ServerCallback.new({
+                remoteFunction = mockRemoteFunction,
+            })
+
+            serverCallback:setCallback(function()
+                error("Uh oh!")
+            end)
+
+            local promise = clientCallback:callServerAsync()
+
+            expect(Promise.is(promise)).to.equal(true)
+            expect(promise:getStatus()).to.equal(Promise.Status.Rejected)
+
+            clientCallback:destroy()
+            serverCallback:destroy()
+            mockRemoteFunction:destroy()
         end)
 
         it("should queue request if the server callback isn't set and resolve once it is", function()
-            local clientCallback, cleanup, remoteFunction = createClientCallback()
-            local response = false
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            task.spawn(function()
-                response = select(2, clientCallback:callServerAsync():await())
+            local clientCallback = ClientCallback.new({
+                remoteFunction = mockRemoteFunction,
+            })
+
+            local serverCallback = ServerCallback.new({
+                remoteFunction = mockRemoteFunction,
+            })
+
+            local promise = clientCallback:callServerAsync()
+
+            expect(promise:getStatus()).to.equal(Promise.Status.Started)
+
+            serverCallback:setCallback(function()
+                return true
             end)
 
-            expect(response).to.equal(false)
+            expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
+            expect(promise:expect()).to.equal(true)
 
-            remoteFunction.OnServerInvoke = function()
-                return true
-            end
-
-            expect(response).to.equal(true)
-
-            cleanup()
+            clientCallback:destroy()
+            serverCallback:destroy()
+            mockRemoteFunction:destroy()
         end)
     end)
 
@@ -144,11 +216,47 @@ return function()
 
     describe("ClientCallback:destroy", function()
         it("should set destroyed field to true", function()
-            local clientCallback, cleanup, remoteFunction = createClientCallback()
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            cleanup()
+            local clientCallback = ClientCallback.new({
+                remoteFunction = mockRemoteFunction,
+            })
+
+            clientCallback:destroy()
 
             expect(clientCallback.destroyed).to.equal(true)
+        end)
+        
+        it("should reject any queued requests from server", function()
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
+
+            local clientCallback = ClientCallback.new({
+                remoteFunction = mockRemoteFunction,
+            })
+
+            local serverCallback = ServerCallback.new({
+                remoteFunction = mockRemoteFunction,
+            })
+
+            local promise0 = serverCallback:callClientAsync("user")
+            expect(promise0:getStatus()).to.equal(Promise.Status.Started)
+
+            clientCallback:flush()
+            expect(promise0:getStatus()).to.equal(Promise.Status.Rejected)
+
+            local promise1 = serverCallback:callClientAsync("user")
+            expect(promise1:getStatus()).to.equal(Promise.Status.Started)
+
+            clientCallback:setCallback(function(num)
+                return true
+            end)
+
+            expect(promise1:getStatus()).to.equal(Promise.Status.Resolved)
+            expect(promise1:expect()).to.equal(true)
+            
+            clientCallback:destroy()
+            serverCallback:destroy()
+            mockRemoteFunction:destroy()
         end)
     end)
 end

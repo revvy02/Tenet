@@ -2,7 +2,7 @@ return function()
     local MockNetwork = require(script.Parent.Parent.Parent.MockNetwork)
     local Promise = require(script.Parent.Parent.Parent.Promise)
 
-    local DynamicStore = require(script.Parent.DynamicStore)
+    local DynamicStoreClient = require(script.Parent.DynamicStoreClient)
     local ClientDynamicStream = require(script.Parent.ClientDynamicStream)
 
     describe("ClientDynamicStream.new", function()
@@ -13,33 +13,11 @@ return function()
                 remoteEvent = mockRemoteEvent,
             })
     
-            expect(clientDynamicStream).to.be.ok()
-            expect(ClientDynamicStream.is(clientDynamicStream)).to.equal(true)
+            expect(clientDynamicStream).to.be.a("table")
+            expect(getmetatable(clientDynamicStream)).to.equal(ClientDynamicStream)
     
             clientDynamicStream:destroy()
             mockRemoteEvent:destroy()
-        end)
-    end)
-
-    describe("ClientDynamicStream.is", function()
-        it("should return true if the passed argument is a ClientDynamicStream instance", function()
-            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new()
-
-            local clientDynamicStream = ClientDynamicStream.new({
-                remoteEvent = mockRemoteEvent,
-            })
-    
-            expect(ClientDynamicStream.is(clientDynamicStream)).to.equal(true)
-    
-            clientDynamicStream:destroy()
-            mockRemoteEvent:destroy()
-        end)
-
-        it("should return false if the passed argument is not a ClientDynamicStream instance", function()
-            expect(ClientDynamicStream.is(true)).to.equal(false)
-            expect(ClientDynamicStream.is(false)).to.equal(false)
-            expect(ClientDynamicStream.is({})).to.equal(false)
-            expect(ClientDynamicStream.is(0)).to.equal(false)
         end)
     end)
 
@@ -66,9 +44,9 @@ return function()
 
             mockRemoteEvent:fireClient(nil, "stream", "owner")
 
-            expect(clientDynamicStream:get("owner")).to.be.ok()
-            expect(DynamicStore.is(clientDynamicStream:get("owner"))).to.equal(true)
-
+            expect(clientDynamicStream:get("owner")).to.be.a("table")
+            expect(getmetatable(clientDynamicStream)).to.equal(ClientDynamicStream)
+            
             clientDynamicStream:destroy()
             mockRemoteEvent:destroy()
         end)

@@ -12,8 +12,7 @@ include = ["src", "src/**", "wally.toml", "default.project.json", "LICENSE"]
 
 [dependencies]
 TestEZ = "roblox/testez@0.4.1"
-Cleaner = "revvy02/cleaner@0.0.9"
-Slick = "revvy02/slick@0.0.6"
-MockNetwork = "revvy02/mocknetwork@0.0.1"
+Cleaner = "revvy02/cleaner@1.0.0"
+Slick = "revvy02/slick@0.0.10"
+MockNetwork = "revvy02/mocknetwork@1.0.1"
 Promise = "evaera/promise@4.0.0"
-Enumerate = "howmanysmall/enumerator@2.2.3"

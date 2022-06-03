@@ -19,17 +19,17 @@ function Client.new(folder)
 
     self._cleaner = Cleaner.new()
 
-    self._elements = self._cleaner:add(Slick.Store.new())
+    self._elements = self._cleaner:give(Slick.Store.new())
     
     for _, directory in pairs(folder:GetChildren()) do
         self:_directoryAdded(directory)
     end
 
-    self._cleaner:add(folder.ChildAdded:Connect(function(directory)
+    self._cleaner:give(folder.ChildAdded:Connect(function(directory)
         self:_directoryAdded(directory)
     end))
 
-    self._cleaner:add(folder.ChildRemoved:Connect(function(directory)
+    self._cleaner:give(folder.ChildRemoved:Connect(function(directory)
         self:_directoryRemoved(directory)
     end))
 
@@ -56,8 +56,8 @@ function Client:_directoryAdded(directory)
         remotesAdded(remotes)
     end
 
-    cleaner:add(directory.ChildAdded:Connect(remotesAdded))
-    cleaner:add(directory.ChildRemoved:Connect(remotesRemoved))
+    cleaner:give(directory.ChildAdded:Connect(remotesAdded))
+    cleaner:give(directory.ChildRemoved:Connect(remotesRemoved))
 end
 
 function Client:_directoryRemoved(directory)

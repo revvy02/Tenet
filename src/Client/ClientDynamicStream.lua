@@ -2,7 +2,7 @@ local Promise = require(script.Parent.Parent.Parent.Promise)
 local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
 local Slick = require(script.Parent.Parent.Parent.Slick)
 
-local DynamicStore = require(script.Parent.DynamicStore)
+local DynamicStoreClient = require(script.Parent.DynamicStoreClient)
 local ClientSignal = require(script.Parent.ClientSignal)
 
 local actionHandlers = {
@@ -22,9 +22,9 @@ local actionHandlers = {
         self:get(owner):setReducers(require(module))
     end,
 
-    stream = function(self, owner, ...)
+    stream = function(self, owner, initial, module)
         self.streaming:fire(owner)
-        self.streamed:fire(owner, self._cleaner:set(owner, DynamicStore.new(...)))
+        self.streamed:fire(owner, self._cleaner:set(owner, DynamicStoreClient.new(initial, module and require(module))))
     end,
 
     unstream = function(self, owner)
@@ -53,7 +53,7 @@ function ClientDynamicStream.new(remotes)
 
     self._cleaner = Cleaner.new()
 
-    self._clientSignal = self._cleaner:add(ClientSignal.new(remotes))
+    self._clientSignal = self._cleaner:give(ClientSignal.new(remotes))
 
     --[=[
         Signal that gets fired once a store begins streaming
@@ -62,7 +62,7 @@ function ClientDynamicStream.new(remotes)
         @readonly
         @within ClientDynamicStream
     ]=]
-    self.streaming = self._cleaner:add(Slick.Signal.new())
+    self.streaming = self._cleaner:give(Slick.Signal.new())
 
     --[=[
         Signal that gets fired once a store is streamed in
@@ -71,7 +71,7 @@ function ClientDynamicStream.new(remotes)
         @readonly
         @within ClientDynamicStream
     ]=]
-    self.streamed = self._cleaner:add(Slick.Signal.new())
+    self.streamed = self._cleaner:give(Slick.Signal.new())
 
     --[=[
         Signal that gets fired once a store begins unstreaming
@@ -80,7 +80,7 @@ function ClientDynamicStream.new(remotes)
         @readonly
         @within ClientDynamicStream
     ]=]
-    self.unstreaming = self._cleaner:add(Slick.Signal.new())
+    self.unstreaming = self._cleaner:give(Slick.Signal.new())
 
     --[=[
         Signal that gets fired once a store is unstreamed out
@@ -89,23 +89,13 @@ function ClientDynamicStream.new(remotes)
         @readonly
         @within ClientDynamicStream
     ]=]
-    self.unstreamed = self._cleaner:add(Slick.Signal.new())
+    self.unstreamed = self._cleaner:give(Slick.Signal.new())
 
-    self._cleaner:add(self._clientSignal:connect(function(action, owner, ...)
+    self._cleaner:give(self._clientSignal:connect(function(action, owner, ...)
         actionHandlers[action](self, owner, ...)
     end))
 
     return self
-end
-
---[=[
-    Returns whether or not the passed argument is a ClientDynamicStream or not
-
-    @param obj any
-    @return bool
-]=]
-function ClientDynamicStream.is(obj)
-    return typeof(obj) == "table" and getmetatable(obj) == ClientDynamicStream
 end
 
 --[=[

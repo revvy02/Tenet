@@ -25,12 +25,11 @@ function ClientCallback.new(remotes)
 
     self._remote.OnClientInvoke = function(...)
         if not self._callback then
-            table.insert(self._queue, {
-                args = {...},
-                thread = coroutine.running(),
-            })
+            warn("ClientCallback has no callback set, so request is being queued")
+            
+            table.insert(self._queue, coroutine.running())
 
-            return coroutine.yield()
+            assert(coroutine.yield())
         end
 
         return self._callback(...)
@@ -40,36 +39,28 @@ function ClientCallback.new(remotes)
 end
 
 --[=[
-    Returns whether or not the passed argument is a ClientCallback or not
-
-    @param obj any
-    @return bool
-]=]
-function ClientCallback.is(obj)
-    return typeof(obj) == "table" and getmetatable(obj) == ClientCallback
-end
-
---[=[
     Sets the client handler callback
 
     @param callback function
 ]=]
 function ClientCallback:setCallback(callback)
+    self._callback = callback
+
     if callback then
-        for _, request in pairs(self._queue) do
-            task.spawn(request.thread, callback(table.unpack(request.args)))
+        for _, thread in pairs(self._queue) do
+            task.spawn(thread, true)
         end
     end
 
-    self._callback = callback
+    table.clear(self._queue)
 end
 
 --[=[
     Flushes any pending requests on the client
 ]=]
 function ClientCallback:flush()
-    for _, request in pairs(self._queue) do
-        task.cancel(request.thread)
+    for _, thread in pairs(self._queue) do
+        task.spawn(thread, false, "Request was flushed on the client")
     end
 
     table.clear(self._queue)

@@ -20,26 +20,16 @@ function ClientSignal.new(remotes)
         Don't have to worry about caching behavior unique to remotes
         since Slick.Signal can handle or flush queued arguments
     ]]
-    self._signal = self._cleaner:add(Slick.Signal.new())
+    self._signal = self._cleaner:give(Slick.Signal.new())
     self._signal:enableQueueing()
     
-    self._remote = self._cleaner:add(remotes.remoteEvent)
+    self._remote = remotes.remoteEvent
     
-    self._cleaner:add(self._remote.OnClientEvent:Connect(function(...)
+    self._cleaner:give(self._remote.OnClientEvent:Connect(function(...)
         self._signal:fire(...)
     end))
 
     return self
-end
-
---[=[
-    Returns whether or not the passed argument is a ClientSignal or not
-
-    @param obj any
-    @return bool
-]=]
-function ClientSignal.is(obj)
-    return typeof(obj) == "table" and getmetatable(obj) == ClientSignal
 end
 
 --[=[

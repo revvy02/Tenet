@@ -10,66 +10,61 @@ function ServerCallback.new(remotes, middleware)
     local self = setmetatable({}, ServerCallback)
 
     self._cleaner = Cleaner.new()
-    self._remote = self._cleaner:add(remotes.remoteFunction)
+    self._remote = self._cleaner:give(remotes.remoteFunction)
+    
+    self._queue = {}
 
     self._wrappedCallback = function(client, ...)
         return self:callServer(client, ...)
     end
 
-    --[[
-        Middleware nesting
-    ]]
     local boundedCall = function(...)
-        return self:callServer(...)
-    end
-
-    for i = #middleware, 1, -1 do
-        local newBoundedCall, cleanup = middleware[i](boundedCall, self)
-
-        boundedCall = newBoundedCall
-
-        self._cleaner:add(cleanup)
-    end
-
-    self.callServer = function(_, ...)
-        return boundedCall(...)
-    end
-
-    self._remote.OnServerInvoke = function(...)
         if not self._callback then
-            table.insert(self._queue, {
-                args = {...},
-                thread = coroutine.running(),
-            })
+            warn("ServerCallback has no callback set, so request is being queued")
 
-            return coroutine.yield()
+            table.insert(self._queue, coroutine.running())
+
+            assert(coroutine.yield())
         end
 
         return self._callback(...)
     end
+
+    if middleware then
+        for i = #middleware, 1, -1 do
+            local newBoundedCall, cleanup = middleware[i](boundedCall, self)
+
+            boundedCall = newBoundedCall
+
+            if cleanup then
+                self._cleaner:give(cleanup)
+            end
+        end
+    end
+
+    self._remote.OnServerInvoke = boundedCall
 
     return self
 end
 
 function ServerCallback:setCallback(callback)
     self._callback = callback
-    self._remote.OnServerInvoke = callback and self._wrappedCallback or nil
+
+    if callback then
+        for _, thread in pairs(self._queue) do
+            task.spawn(thread, true)
+        end
+    end
+
+    table.clear(self._queue)
 end
 
 function ServerCallback:flush()
-    if not self._callback then
-        self._remote.OnServerInvoke = self._wrappedCallback
-        self._remote.OnServerInvoke = nil
+    for _, thread in pairs(self._queue) do
+        task.spawn(thread, false, "Request was flushed on the server")
     end
-end
 
---[=[
-
-]=]
-function ServerCallback:callServer(client, ...)
-    if self._callback then
-        return self._callback(client, ...)
-    end
+    table.clear(self._queue)
 end
 
 function ServerCallback:callClientAsync(client, ...)
@@ -79,7 +74,9 @@ function ServerCallback:callClientAsync(client, ...)
 end
 
 function ServerCallback:destroy()
+    self:flush()
     self._cleaner:destroy()
+    self.destroyed = true
 end
 
 return ServerCallback
