@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 
 local Slick = require(script.Parent.Parent.Parent.Slick)
 local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
+local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
 
 local ServerSignal = {}
 ServerSignal.__index = ServerSignal
@@ -15,8 +16,7 @@ function ServerSignal.new(remotes, middleware)
         Don't have to worry about caching behavior unique to remotes
         since Slick.Signal can handle or flush queued arguments
     ]]
-    self._signal = self._cleaner:give(Slick.Signal.new())
-    self._signal:enableQueueing()
+    self._signal = self._cleaner:give(TrueSignal.new(false, true))
 
     --[[
         Can pass a mock remote for testing
@@ -41,14 +41,8 @@ function ServerSignal.new(remotes, middleware)
             boundedFire = newBoundedFire
         end
     end
-
-    self.fireServer = function(_, ...)
-        boundedFire(...)
-    end
     
-    self._cleaner:give(self._remote.OnServerEvent:Connect(function(...)
-        self:fireServer(...)
-    end))
+    self._cleaner:give(self._remote.OnServerEvent:Connect(boundedFire))
 
     return self
 end

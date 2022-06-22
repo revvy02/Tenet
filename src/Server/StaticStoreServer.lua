@@ -1,6 +1,9 @@
+local Players = game:GetService("Players")
+
 local Slick = require(script.Parent.Parent.Parent.Slick)
 local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
 local Promise = require(script.Parent.Parent.Parent.Promise)
+local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
 
 local StaticStoreServer = {}
 StaticStoreServer.__index = StaticStoreServer
@@ -27,6 +30,12 @@ function StaticStoreServer._new(serverSignal, owner, initial, reducers)
         self._serverSignal:fireClients(self:getViewers(), "unstream", self._owner)
     end)
 
+    self._cleaner:give(Players.PlayerRemoving:Connect(function(player)
+        for key in pairs(self._subscribers) do
+            self:unsubscribe(key, player)
+        end
+    end))
+
     return self
 end
 
@@ -44,17 +53,17 @@ end
 
 
 function StaticStoreServer:stream(player)
-    if self:watching(player) then
+    if self:isViewing(player) then
         return
     end
 
     table.insert(self._viewers, player)
 
-    self._serverSignal:fireClient(player, "stream", self._owner, self._store:getState(), self._reducersModule)
+    self._serverSignal:fireClient(player, "static", self._owner, self._store:getState(), self._reducersModule)
 end
 
 function StaticStoreServer:unstream(player)
-    if not self:watching(player) then
+    if not self:isViewing(player) then
         return
     end
 
@@ -78,8 +87,8 @@ function StaticStoreServer:getChangedSignal(key)
     return self._store:getChangedSignal(key)
 end
 
-function StaticStoreServer:getReducedSignal(key)
-    return self._store:getReducedSignal(key)
+function StaticStoreServer:getReducedSignal(key, reducer)
+    return self._store:getReducedSignal(key, reducer)
 end
 
 
@@ -87,6 +96,7 @@ end
 
 function StaticStoreServer:destroy()
     self._cleaner:destroy()
+    self.destroyed = true
 end
 
 return StaticStoreServer

@@ -9,7 +9,7 @@ StaticStoreClient.__index = StaticStoreClient
 function StaticStoreClient._new(initial, reducers)
     local self = setmetatable({}, StaticStoreClient)
 
-    self._store = Slick.Store.new()
+    self._store = Slick.Store.new(initial, reducers)
 
     self.reduced = self._store.reduced
     self.changed = self._store.changed
@@ -20,6 +20,12 @@ end
 function StaticStoreClient:_dispatch(key, reducer, ...)
     self._store:dispatch(key, reducer, ...)
 end
+
+function StaticStoreClient:_destroy()
+    self._store:destroy()
+    self.destroyed = true
+end
+
 
 
 
@@ -37,9 +43,6 @@ end
 
 
 
-function StaticStoreClient:_destroy()
-    self._store:destroy()
-    self.destroyed = true
-end
+
 
 return StaticStoreClient

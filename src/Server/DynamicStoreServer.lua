@@ -1,10 +1,17 @@
+local Players = game:GetService("Players")
+
+local Slick = require(script.Parent.Parent.Parent.Slick)
+local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
+local Promise = require(script.Parent.Parent.Parent.Promise)
+local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
+
 local DynamicStoreServer = {}
-DynamicStoreServer.__index = DynamicStore
+DynamicStoreServer.__index = DynamicStoreServer
 
-function DynamicStoreServer.new(serverSignal, owner, initial, reducers)
-    local self = setmetatable({}, DynamicStore)
+function DynamicStoreServer._new(serverSignal, owner, initial, reducers)
+    local self = setmetatable({}, DynamicStoreServer)
 
-    self._watchers = {}
+    self._viewers = {}
     self._subscribers = {}
 
     self._owner = owner
@@ -18,36 +25,66 @@ function DynamicStoreServer.new(serverSignal, owner, initial, reducers)
     self.changed = self._store.changed
 
     self._cleaner:give(self._store.reduced:connect(function(key, reducer, ...)
-        self._serverSignal:fireClients(self:getWatchingSubscribers(key), "dispatch", self._owner, key, reducer, ...)
+        self._serverSignal:fireClients(self:getSubscribers(key), "dispatch", self._owner, key, reducer, ...)
     end))
 
     self._cleaner:give(function()
-        self._serverSignal:fireClients(self:getWatchers(), "unstream", self._owner)
+        self._serverSignal:fireClients(self:getViewers(), "unstream", self._owner)
     end)
+
+    self._cleaner:give(Players.PlayerRemoving:Connect(function(player)
+        self:unstream(player)
+    end))
 
     return self
 end
 
 
-function DynamicStoreClient:subscribed(key, player)
+
+function DynamicStoreServer:getSubscribers(key)
+    return self._subscribers[key]
+end
+
+function DynamicStoreServer:getViewingSubscribers(key)
+    
+end
+
+function DynamicStoreServer:getViewers()
+    return self._viewers
+end
+
+
+
+
+
+
+
+
+function DynamicStoreServer:isSubscribed(key, player)
     local list = self._subscribers[key]
 
-    if list and table.find(list, player) then
-        return true
-    else
-        return false
+    return list ~= nil and table.find(list, player) ~= nil
+end
+
+function DynamicStoreServer:isViewing(player)
+    return table.find(self._viewers, player) ~= nil
+end
+
+
+
+
+
+
+
+
+
+
+function DynamicStoreServer:subscribe(key, player)
+    if not self:isViewing(player) then
+        self:stream(player)
     end
-end
-
-function DynamicStoreClient:watching(player)
-    return table.find(self._watchers, player) ~= nil
-end
-
-
-
-
-function DynamicStoreClient:subscribe(key, player)
-    if self:subscribed(key, player) then
+    
+    if self:isSubscribed(key, player) then
         return
     end
 
@@ -59,65 +96,56 @@ function DynamicStoreClient:subscribe(key, player)
     end
 
     table.insert(list, player)
+
+    self._serverSignal:fireClient(player, "load", self._owner, key, self:getValue(key))
 end
 
 function DynamicStoreServer:unsubscribe(key, player)
-    if not self:subscribed(key, player) then
+    if not self:isSubscribed(key, player) then
         return
     end
 
     local list = self._subscribers[key]
 
     table.remove(list, table.find(list, player))
-end
 
-function DynamicStoreServer:getSubscribers(key)
-    return self._subscribers[key]
-end
-
-function DynamicStoreServer:getWatchingSubscribers(key)
-    local list = {}
-
-    for _, player in pairs(self:getSubscribers(key)) do
-        if self:watching(player) then
-            table.insert(list, player)
-        end
-    end
-
-    return list
-end
-
-function DynamicStoreServer:getWatchers()
-    return self._watchers
+    self._serverSignal:fireClient(player, "unload", self._owner, key)
 end
 
 
 
-function DynamicStoreServer:setReducers(module)
-    self._reducersModule = module
-    self._store:setReducers(require(module))
-    self._serverSignal:fireClients(self:getWatchers(), "setReducers", self._owner, module)
-end
+
+
+
+
+
+
 
 function DynamicStoreServer:stream(player)
-    if self:watching(player) then
+    if self:isViewing(player) then
         return
     end
 
-    table.insert(self._watchers, player)
+    table.insert(self._viewers, player)
 
-    self._serverSignal:fireClient(player, "stream", self._owner, self:getState(), self._reducersModule)
+    self._serverSignal:fireClient(player, "dynamic", self._owner, self._reducersModule)
 end
 
 function DynamicStoreServer:unstream(player)
-    if not self:watching(player) then
+    if not self:isViewing(player) then
         return
     end
 
-    table.remove(self._watchers, table.find(self._watchers, player))
+    table.remove(self._viewers, table.find(self._viewers, player))
+
+    for key in pairs(self._subscribers) do
+        self:unsubscribe(key, player)
+    end
 
     self._serverSignal:fireClient(player, "unstream", self._owner)
 end
+
+
 
 
 
@@ -128,10 +156,6 @@ end
 
 function DynamicStoreServer:getValue(key)
     return self._store:getValue(key)
-end
-
-function DynamicStoreServer:getState()
-    return self._store:getState()
 end
 
 function DynamicStoreServer:getChangedSignal(key)

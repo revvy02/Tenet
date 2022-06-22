@@ -1,0 +1,15 @@
+[package]
+name = "revvy02/truesignal"
+description = "Roblox Luau Signal class that allows for queueing and deferred behavior."
+version = "1.0.2"
+license = "MIT"
+authors = ["revvy02"]
+realm = "shared"
+registry = "https://github.com/upliftgames/wally-index"
+
+exclude = ["**"]
+include = ["src", "src/**", "wally.toml", "default.project.json", "LICENSE"]
+
+[dependencies]
+TestEZ = "roblox/testez@0.4.1"
+Promise = "evaera/promise@4.0.0"

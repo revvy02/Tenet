@@ -81,23 +81,15 @@ function Client:getClientSignalAsync(name)
 end
 
 function Client:getClientCallbackAsync(name)
-    return self:_getElementAsync("ClientSignals", name)
-end
-
-function Client:getClientDynamicStoreAsync(name)
-    return self:_getElementAsync("ClientSignals", name)
+    return self:_getElementAsync("ClientCallback", name)
 end
 
 function Client:getClientDynamicStreamAsync(name)
-    return self:_getElementAsync("ClientSignals", name)
+    return self:_getElementAsync("ClientDynamicStream", name)
 end
 
-function Client:getClientStoreAsync(name)
-    return self:_getElementAsync("ClientSignals", name)
-end
-
-function Client:getClientStreamAsync(name)
-    return self:_getElementAsync("ClientSignals", name)
+function Client:getClientStaticStreamAsync(name)
+    return self:_getElementAsync("ClientStaticStream", name)
 end
 
 function Client:destroy()

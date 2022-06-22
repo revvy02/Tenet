@@ -1,7 +1,5 @@
-local Players = game:GetService("Players")
-
-local Slick = require(script.Parent.Parent.Parent.Slick)
 local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
+local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
 
 --[=[
     ClientSignal class
@@ -20,8 +18,7 @@ function ClientSignal.new(remotes)
         Don't have to worry about caching behavior unique to remotes
         since Slick.Signal can handle or flush queued arguments
     ]]
-    self._signal = self._cleaner:give(Slick.Signal.new())
-    self._signal:enableQueueing()
+    self._signal = self._cleaner:give(TrueSignal.new(false, true))
     
     self._remote = remotes.remoteEvent
     

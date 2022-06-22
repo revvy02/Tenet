@@ -1,131 +1,141 @@
 local MockNetwork = require(script.Parent.Parent.Parent.MockNetwork)
-local Slick = require(script.Parent.Parent.Parent.Slick)
+local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
+local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
 
-local ClientStaticStream = require(script.Parent.ClientStaticStream)
-local ServerStaticStream = require(script.Parent.Parent.Server.ServerStaticStream)
+local ClientStream = require(script.Parent.ClientStream)
+local ServerStream = require(script.Parent.Parent.Server.ServerStream)
 
 return function()
+    local cleaner = Cleaner.new()
+    
+    afterEach(function()
+        cleaner:work()
+    end)
+
+    afterAll(function()
+        cleaner:destroy()
+    end)
+
     describe("StaticStoreClient:getValue", function()
         it("should return a value that changes properly from server changes", function()
-            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
+            local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverStaticStream = ServerStaticStream.new({
+            local serverStream = cleaner:give(ServerStream.new({
                 remoteEvent = mockRemoteEvent,
+            }))
+
+            local clientStream = cleaner:give(ClientStream.new({
+                remoteEvent = mockRemoteEvent,
+            }))
+
+            local ssServer = serverStream:create("store", {
+                xp = 0,
+                inv = {},
             })
 
-            local clientStaticStream = ClientStaticStream.new({
-                remoteEvent = mockRemoteEvent,
-            })
+            ssServer:stream("user")
+            
+            local ssClient = serverStream:get("store")
 
-            serverStaticStream:create("store", {
-                key0 = 0,
-                key1 = {},
-            }):stream("user")
+            expect(ssClient:getValue("xp")).to.equal(0)
+            expect(ssClient:getValue("inv")[1]).to.equal(nil)
 
-            expect(clientStaticStream:get("store"):getValue("key0")).to.equal(0)
-            expect(clientStaticStream:get("store"):getValue("key1")).to.be.a("table")
-            expect(clientStaticStream:get("store"):getValue("key1")[1]).to.equal(nil)
+            ssServer:dispatch("xp", "setValue", 1000)
+            ssServer:dispatch("inv", "insertValue", "gun")
 
-            serverStaticStream:get("store"):dispatch("key0", "setValue", 1)
-            serverStaticStream:get("store"):dispatch("key1", "insertValue", 1)
-
-            expect(clientStaticStream:get("store"):getValue("key0")).to.equal(1)
-            expect(clientStaticStream:get("store"):getValue("key1")[1]).to.equal(1)
-
-            clientStaticStream:destroy()
-            serverStaticStream:destroy()
-            mockRemoteEvent:destroy()
+            expect(ssClient:getValue("xp")).to.equal(1000)
+            expect(ssClient:getValue("inv")[1]).to.equal("gun")
         end)
     end)
 
     describe("StaticStoreClient:getChangedSignal", function()
         it("should return a changed signal that is fired properly from server changes", function()
-            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
+            local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverStaticStream = ServerStaticStream.new({
+            local serverStream = cleaner:give(ServerStream.new({
                 remoteEvent = mockRemoteEvent,
+            }))
+
+            local clientStream = cleaner:give(ClientStream.new({
+                remoteEvent = mockRemoteEvent,
+            }))
+
+            local ssServer = serverStream:create("store", {
+                xp = 0,
+                inv = {},
             })
 
-            local clientStaticStream = ClientStaticStream.new({
-                remoteEvent = mockRemoteEvent,
-            })
+            ssServer:stream("user")
 
-            serverStaticStream:create("store", {
-                key0 = 0,
-                key1 = {},
-            }):stream("user")
+            local ssClient = clientStream:get("store")
 
-            local signal0 = clientStaticStream:getChangedSignal("key0")
-            local signal1 = clientStaticStream:getChangedSignal("key1")
+            local xpSignal = ssClient:getChangedSignal("xp")
+            local invSignal = ssClient:getChangedSignal("inv")
 
-            expect(signal0).to.be.a("table")
-            expect(getmetatable(signal0)).to.equal(Slick.Signal)
+            expect(xpSignal).to.be.a("table")
+            expect(getmetatable(xpSignal)).to.equal(TrueSignal)
 
-            expect(signal1).to.be.a("table")
-            expect(getmetatable(signal1)).to.equal(Slick.Signal)
+            expect(invSignal).to.be.a("table")
+            expect(getmetatable(invSignal)).to.equal(TrueSignal)
 
-            expect(clientStaticStream:get("store"):getValue("key0")).to.equal(0)
-            expect(clientStaticStream:get("store"):getValue("key1")).to.be.a("table")
+            expect(ssClient:getValue("xp")).to.equal(0)
+            expect(ssClient:getValue("inv")[1]).to.equal(nil)
 
-            local promise0 = signal0:promise()
-            local promise1 = signal1:promise()
+            local xpPromise = xpSignal:promise()
+            local invPromise = invSignal:promise()
 
-            serverStaticStream:get("store"):dispatch("key0", "setValue", 1)
-            serverStaticStream:get("store"):dispatch("key1", "insertValue", 1)
+            ssServer:dispatch("xp", "setValue", 1000)
+            ssServer:dispatch("inv", "insertValue", "gun")
 
-            expect(select(1, promise0:expect())).to.equal(1)
-            expect(select(2, promise0:expect())).to.equal(0)
+            expect(select(1, xpPromise:expect())).to.equal(1000)
+            expect(select(2, xpPromise:expect())).to.equal(0)
 
-            expect(select(1, promise1:expect())[1]).to.equal(1)
-            expect(select(2, promise1:expect())[1]).to.equal(nil)
-
-            clientStaticStream:destroy()
-            serverStaticStream:destroy()
-            mockRemoteEvent:destroy()
+            expect(select(1, invPromise:expect())[1]).to.equal("gun")
+            expect(select(2, invPromise:expect())[1]).to.equal(nil)
         end)
     end)
 
     describe("StaticStoreClient:getReducedSignal", function()
         it("should return a reduced signal that is fired properly from server changes", function()
-            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
+            local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverStaticStream = ServerStaticStream.new({
+            local serverStream = cleaner:give(ServerStream.new({
                 remoteEvent = mockRemoteEvent,
+            }))
+
+            local clientStream = cleaner:give(ClientStream.new({
+                remoteEvent = mockRemoteEvent,
+            }))
+
+            local ssServer = serverStream:create("store", {
+                xp = 0,
+                inv = {},
             })
 
-            local clientStaticStream = ClientStaticStream.new({
-                remoteEvent = mockRemoteEvent,
-            })
+            ssServer:stream("user")
 
-            serverStaticStream:create("store", {
-                key0 = 0,
-                key1 = {},
-            }):stream("user")
+            local ssClient = clientStream:get("store")
 
-            local signal0 = clientStaticStream:getReducedSignal("key0", "setValue")
-            local signal1 = clientStaticStream:getReducedSignal("key1", "insertValue")
+            local xpSignal = ssClient:getReducedSignal("xp", "setValue")
+            local invSignal = ssClient:getReducedSignal("inv", "insertValue")
 
-            expect(signal0).to.be.a("table")
-            expect(getmetatable(signal0)).to.equal(Slick.Signal)
+            expect(xpSignal).to.be.a("table")
+            expect(getmetatable(xpSignal)).to.equal(TrueSignal)
 
-            expect(signal1).to.be.a("table")
-            expect(getmetatable(signal1)).to.equal(Slick.Signal)
+            expect(invSignal).to.be.a("table")
+            expect(getmetatable(invSignal)).to.equal(TrueSignal)
 
-            expect(clientStaticStream:get("store"):getValue("key0")).to.equal(0)
-            expect(clientStaticStream:get("store"):getValue("key1")).to.be.a("table")
+            expect(ssClient:getValue("xp")).to.equal(0)
+            expect(ssClient:getValue("inv")[1]).to.equal(nil)
 
-            local promise0 = signal0:promise()
-            local promise1 = signal1:promise()
+            local xpPromise = xpSignal:promise()
+            local invPromise = invSignal:promise()
 
-            serverStaticStream:get("store"):dispatch("key0", "setValue", 1)
-            serverStaticStream:get("store"):dispatch("key1", "insertValue", 1)
+            ssServer:dispatch("xp", "setValue", 1000)
+            ssServer:dispatch("inv", "insertValue", "gun")
 
-            expect(promise0:expect()).to.equal(1)
-            expect(promise1:expect()).to.equal(1)
-
-            clientStaticStream:destroy()
-            serverStaticStream:destroy()
-            mockRemoteEvent:destroy()
+            expect(xpPromise:expect()).to.equal(1000)
+            expect(invPromise:expect()).to.equal("gun")
         end)
     end)
 end
