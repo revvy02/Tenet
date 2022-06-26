@@ -9,13 +9,15 @@ local DynamicStoreServer = require(script.Parent.DynamicStoreServer)
 local ServerStream = {}
 ServerStream.__index = ServerStream
 
-function ServerStream.new(remotes, dynamic, module)
+function ServerStream.new(remoteEvent, dynamic, module)
     local self = setmetatable({}, ServerStream)
 
-    self._cleaner = Cleaner.new()
     self._dynamic = dynamic
+    self._module = module
 
-    self._serverSignal = self._cleaner:give(ServerSignal.new(remotes))
+    self._cleaner = Cleaner.new()
+
+    self._serverSignal = self._cleaner:give(ServerSignal.new(remoteEvent))
 
     self.created = self._cleaner:give(TrueSignal.new())
     self.removed = self._cleaner:give(TrueSignal.new())
@@ -23,20 +25,16 @@ function ServerStream.new(remotes, dynamic, module)
     return self
 end
 
-function ServerStream:create(owner, initial, reducers)
-    local store = if self._dynamic then
-        self._cleaner:set(owner, DynamicStoreServer._new(self._serverSignal, owner, initial, reducers))
+function ServerStream:create(owner, initial)
+    if self._dynamic then
+        return DynamicStoreServer._new(self, owner, initial)
     else
-        self._cleaner:set(owner, StaticStoreServer._new(self._serverSignal, owner, initial, reducers))
-
-    self.created:fire(owner, store)
-
-    return store
+        return StaticStoreServer._new(self, owner, initial)
+    end
 end
 
 function ServerStream:remove(owner)
     self._cleaner:finalize(owner)
-    self.removed:fire(owner)
 end
 
 function ServerStream:get(owner)

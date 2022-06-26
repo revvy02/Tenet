@@ -20,13 +20,8 @@ return function()
         it("should return a value that changes properly from server changes", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverStream = cleaner:give(ServerStream.new({
-                remoteEvent = mockRemoteEvent,
-            }))
-
-            local clientStream = cleaner:give(ClientStream.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local serverStream = cleaner:give(ServerStream.new(mockRemoteEvent))
+            local clientStream = cleaner:give(ClientStream.new(mockRemoteEvent))
 
             local ssServer = serverStream:create("store", {
                 xp = 0,
@@ -35,7 +30,7 @@ return function()
 
             ssServer:stream("user")
             
-            local ssClient = serverStream:get("store")
+            local ssClient = clientStream:get("store")
 
             expect(ssClient:getValue("xp")).to.equal(0)
             expect(ssClient:getValue("inv")[1]).to.equal(nil)
@@ -52,13 +47,8 @@ return function()
         it("should return a changed signal that is fired properly from server changes", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverStream = cleaner:give(ServerStream.new({
-                remoteEvent = mockRemoteEvent,
-            }))
-
-            local clientStream = cleaner:give(ClientStream.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local serverStream = cleaner:give(ServerStream.new(mockRemoteEvent))
+            local clientStream = cleaner:give(ClientStream.new(mockRemoteEvent))
 
             local ssServer = serverStream:create("store", {
                 xp = 0,
@@ -99,13 +89,8 @@ return function()
         it("should return a reduced signal that is fired properly from server changes", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverStream = cleaner:give(ServerStream.new({
-                remoteEvent = mockRemoteEvent,
-            }))
-
-            local clientStream = cleaner:give(ClientStream.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local serverStream = cleaner:give(ServerStream.new(mockRemoteEvent))
+            local clientStream = cleaner:give(ClientStream.new(mockRemoteEvent))
 
             local ssServer = serverStream:create("store", {
                 xp = 0,

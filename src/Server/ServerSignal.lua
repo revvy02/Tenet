@@ -1,13 +1,14 @@
-local Players = game:GetService("Players")
-
-local Slick = require(script.Parent.Parent.Parent.Slick)
 local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
 local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
 
 local ServerSignal = {}
 ServerSignal.__index = ServerSignal
 
-function ServerSignal.new(remotes, middleware)
+function ServerSignal.new(remoteEvent, inboundMiddleware, outboundMiddleware)
+    --[[
+        inbound for ratelimiting, rttcing, deserializing
+        outbound for serializing, throttling
+    ]]
     local self = setmetatable({}, ServerSignal)
 
     self._cleaner = Cleaner.new()
@@ -21,28 +22,45 @@ function ServerSignal.new(remotes, middleware)
     --[[
         Can pass a mock remote for testing
     ]]
-    self._remote = remotes.remoteEvent
+    self._remote = remoteEvent
 
     --[[
         wrap fire in middleware (server received)
     ]]
-    local boundedFire = function(...)
-        self._signal:fire(...)
+    local fireInbound = function(client, ...)
+        self._signal:fire(client, ...)
+    end
+
+    local fireOutbound = function(client, ...)
+        self._remote:FireClient(client, ...)
     end
     
-    if middleware then
-        for i = #middleware, 1, -1 do
-            local newBoundedFire, cleanup = middleware[i](boundedFire, self)
-            
+    if inboundMiddleware then
+        for i = #inboundMiddleware, 1, -1 do
+            local nextInbound, cleanup = inboundMiddleware[i](fireInbound, self)
+
             if cleanup then
                 self._cleaner:give(cleanup)
             end
 
-            boundedFire = newBoundedFire
+            fireInbound = nextInbound
         end
     end
-    
-    self._cleaner:give(self._remote.OnServerEvent:Connect(boundedFire))
+
+    if outboundMiddleware then
+        for i = #outboundMiddleware, 1, -1 do
+            local nextOutbound, cleanup = outboundMiddleware[i](fireOutbound, self)
+
+            if cleanup then
+                self._cleaner:give(cleanup)
+            end
+
+            fireOutbound = nextOutbound
+        end
+    end
+
+    self.fireClient = fireOutbound
+    self._cleaner:give(self._remote.OnServerEvent:Connect(fireInbound))
 
     return self
 end
@@ -53,12 +71,8 @@ end
 
 function ServerSignal:fireClients(clients, ...)
     for _, client in pairs(clients) do
-        self._remote:FireClient(client, ...)
+        self:fireClient(client, ...)
     end
-end
-
-function ServerSignal:fireAllClients(...)
-    self._remote:FireAllClients(...)
 end
 
 function ServerSignal:flush()

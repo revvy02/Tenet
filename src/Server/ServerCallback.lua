@@ -6,11 +6,11 @@ local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
 local ServerCallback = {}
 ServerCallback.__index = ServerCallback
 
-function ServerCallback.new(remotes, middleware)
+function ServerCallback.new(remoteFunction, middleware)
     local self = setmetatable({}, ServerCallback)
 
     self._cleaner = Cleaner.new()
-    self._remote = self._cleaner:give(remotes.remoteFunction)
+    self._remote = self._cleaner:give(remoteFunction)
     
     self._queue = {}
 

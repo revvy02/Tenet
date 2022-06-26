@@ -9,7 +9,7 @@ local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
 local ClientSignal = {}
 ClientSignal.__index = ClientSignal
 
-function ClientSignal.new(remotes)
+function ClientSignal.new(remoteEvent)
     local self = setmetatable({}, ClientSignal)
 
     self._cleaner = Cleaner.new()
@@ -20,7 +20,7 @@ function ClientSignal.new(remotes)
     ]]
     self._signal = self._cleaner:give(TrueSignal.new(false, true))
     
-    self._remote = remotes.remoteEvent
+    self._remote = remoteEvent
     
     self._cleaner:give(self._remote.OnClientEvent:Connect(function(...)
         self._signal:fire(...)

@@ -9,9 +9,7 @@ return function()
     local cleaner = Cleaner.new()
 
     local function mapClientCallbacks(id, client)
-        return id, cleaner:give(ClientCallback.new({
-            remoteFunction = client:getRemoteFunction("remoteFunction"),
-        }))
+        return id, cleaner:give(ClientCallback.new(client:getRemoteFunction("remoteFunction")))
     end
 
     afterEach(function()
@@ -26,9 +24,7 @@ return function()
         it("should create a new ServerCallback object", function()
             local mockRemoteFunction = cleaner:give(MockNetwork.MockRemoteFunction.new("user"))
 
-            local serverCallback = cleaner:give(ServerCallback.new({
-                remoteFunction = mockRemoteFunction,
-            }))
+            local serverCallback = cleaner:give(ServerCallback.new(mockRemoteFunction))
 
             expect(serverCallback).to.be.a("table")
             expect(getmetatable(serverCallback)).to.equal(ServerCallback)
@@ -53,9 +49,7 @@ return function()
                 end
             end
 
-            local serverCallback = cleaner:give(ServerCallback.new({
-                remoteFunction = server:createRemoteFunction("remoteFunction"),
-            }, {
+            local serverCallback = cleaner:give(ServerCallback.new(server:createRemoteFunction("remoteFunction"), {
                 middleware({
                     index = 1,
                     password = "1234",
@@ -98,181 +92,156 @@ return function()
 
     describe("ServerCallback:setCallback", function()
         it("should resolve queued requests from the client with the response if the callback doesn't error", function()
-            local server = cleaner:give(MockNetwork.Server.new({"user1", "user2", "user3"}))
+            local server = cleaner:give(MockNetwork.Server.new({"user1", "user2"}))
             local clients = server:mapClients()
 
-            local serverCallback = cleaner:give(ServerCallback.new({
-                remoteFunction = server:createRemoteFunction("remoteFunction"),
-            }))
-
+            local serverCallback = cleaner:give(ServerCallback.new(server:createRemoteFunction("remoteFunction")))
             local clientCallbacks = server:mapClients(mapClientCallbacks)
 
-            ---------------
-            local count = 0
+            local counts = {
+                [clients.user1] = 0,
+                [clients.user2] = 0,
+            }
 
-            local promise1 = clientCallback:callServerAsync(1)
-            expect(promise1:getStatus()).to.equal(Promise.Status.Started)
+            local user1promise1 = clientCallbacks.user1:callServerAsync(1)
+            local user1promise2 = clientCallbacks.user1:callServerAsync(2)
 
-            local promise2 = clientCallback:callServerAsync(2)
-            expect(promise2:getStatus()).to.equal(Promise.Status.Started)
+            expect(user1promise1:getStatus()).to.equal(Promise.Status.Started)
+            expect(user1promise2:getStatus()).to.equal(Promise.Status.Started)
+
+            local user2promise1 = clientCallbacks.user2:callServerAsync(3)
+            local user2promise2 = clientCallbacks.user2:callServerAsync(4)
+
+            expect(user2promise1:getStatus()).to.equal(Promise.Status.Started)
+            expect(user2promise2:getStatus()).to.equal(Promise.Status.Started)
 
             serverCallback:setCallback(function(client, num)
-                return num * 2
+                counts[client] += num
             end)
 
-            expect(promise1:getStatus()).to.equal(Promise.Status.Resolved)
-            expect(promise2:getStatus()).to.equal(Promise.Status.Resolved)
-
-            count += promise1:expect()
-            count += promise2:expect()
-
-            expect(count).to.equal(6)
+            expect(counts[clients.user1]).to.equal(3)
+            expect(counts[clients.user2]).to.equal(7)
         end)
 
-        it("should reject any queued requests from the client if the callback errors", function()
-            local mockRemoteFunction = cleaner:give(MockNetwork.MockRemoteFunction.new("user"))
+        it("should reject queued requests from the client if the callback errors", function()
+            local server = cleaner:give(MockNetwork.Server.new({"user1", "user2"}))
 
-            local clientCallback = ClientCallback.new({
-                remoteFunction = mockRemoteFunction,
-            })
+            local serverCallback = cleaner:give(ServerCallback.new(server:createRemoteFunction("remoteFunction")))
+            local clientCallbacks = server:mapClients(mapClientCallbacks)
 
-            local serverCallback = ServerCallback.new({
-                remoteFunction = mockRemoteFunction,
-            })
+            local user1promise = clientCallbacks.user1:callServerAsync("z4321")
+            local user2promise = clientCallbacks.user1:callServerAsync("z1234")
 
-            local promise0 = clientCallback:callServerAsync("z4321")
-            expect(promise0:getStatus()).to.equal(Promise.Status.Started)
+            expect(user1promise:getStatus()).to.equal(Promise.Status.Started)
+            expect(user2promise:getStatus()).to.equal(Promise.Status.Started)
 
-            local promise1 = clientCallback:callServerAsync("z1234")
-            expect(promise1:getStatus()).to.equal(Promise.Status.Started)
-
-            serverCallback:setCallback(function(client, password)
+            serverCallback:setCallback(function(_, password)
                 assert(password == "z1234", "Uh oh!")
 
                 return "Yay!"
             end)
 
-            expect(promise0:getStatus()).to.equal(Promise.Status.Rejected)
-            expect(promise1:getStatus()).to.equal(Promise.Status.Resolved)
-            expect(promise1:expect()).to.equal("Yay!")
+            expect(user1promise:getStatus()).to.equal(Promise.Status.Rejected)
 
-            clientCallback:destroy()
-            serverCallback:destroy()
-            mockRemoteFunction:destroy()
+            expect(user2promise:getStatus()).to.equal(Promise.Status.Resolved)
+            expect(user2promise:expect()).to.equal("Yay!")
         end)
     end)
 
     describe("ServerCallback:flush", function()
-        it("should reject any queued requests from the client with an error", function()
-            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
+        it("should reject queued requests from the client with an error", function()
+            local server = cleaner:give(MockNetwork.Server.new({"user1", "user2"}))
 
-            local clientCallback = ClientCallback.new({
-                remoteFunction = mockRemoteFunction,
-            })
+            local serverCallback = cleaner:give(ServerCallback.new(server:createRemoteFunction("remoteFunction")))
+            local clientCallbacks = server:mapClients(mapClientCallbacks)
 
-            local serverCallback = ServerCallback.new({
-                remoteFunction = mockRemoteFunction,
-            })
+            local user1promise = clientCallbacks.user1:callServerAsync()
+            local user2promise = clientCallbacks.user2:callServerAsync()
 
-            local promise0 = clientCallback:callServerAsync()
-            expect(promise0:getStatus()).to.equal(Promise.Status.Started)
+            expect(user1promise:getStatus()).to.equal(Promise.Status.Started)
+            expect(user2promise:getStatus()).to.equal(Promise.Status.Started)
 
             serverCallback:flush()
-            expect(promise0:getStatus()).to.equal(Promise.Status.Rejected)
 
-            local promise1 = clientCallback:callServerAsync()
-            expect(promise1:getStatus()).to.equal(Promise.Status.Started)
-
-            serverCallback:setCallback(function(client)
-                return true
-            end)
-
-            expect(promise1:getStatus()).to.equal(Promise.Status.Resolved)
-            expect(promise1:expect()).to.equal(true)
-            
-            clientCallback:destroy()
-            serverCallback:destroy()
-            mockRemoteFunction:destroy()
+            expect(user1promise:getStatus()).to.equal(Promise.Status.Rejected)
+            expect(user2promise:getStatus()).to.equal(Promise.Status.Rejected)
         end)
     end)
 
     describe("ServerCallback:callClientAsync", function()
         it("should return a promise that resolves with the response from the client if it doesn't error", function()
-            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
+            local server = cleaner:give(MockNetwork.Server.new({"user1", "user2"}))
+            local clients = server:mapClients()
 
-            local clientCallback = ClientCallback.new({
-                remoteFunction = mockRemoteFunction,
-            })
+            local serverCallback = cleaner:give(ServerCallback.new(server:createRemoteFunction("remoteFunction")))
+            local clientCallbacks = server:mapClients(mapClientCallbacks)
 
-            local serverCallback = ServerCallback.new({
-                remoteFunction = mockRemoteFunction,
-            })
-
-            clientCallback:setCallback(function()
+            clientCallbacks.user1:setCallback(function()
                 return 1
             end)
 
-            local promise = serverCallback:callClientAsync("user")
+            clientCallbacks.user2:setCallback(function()
+                return 2
+            end)
 
-            expect(Promise.is(promise)).to.equal(true)
-            expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
-            expect(promise:expect()).to.equal(1)
+            local user1promise = serverCallback:callClientAsync(clients.user1)
+            local user2promise = serverCallback:callClientAsync(clients.user2)
 
-            clientCallback:destroy()
-            serverCallback:destroy()
-            mockRemoteFunction:destroy()
+            expect(user1promise:getStatus()).to.equal(Promise.Status.Resolved)
+            expect(user2promise:getStatus()).to.equal(Promise.Status.Resolved)
+
+            expect(user1promise:expect()).to.equal(1)
+            expect(user2promise:expect()).to.equal(2)
         end)
 
         it("should return a promise that rejects if the client errors", function()
-            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
+            local server = cleaner:give(MockNetwork.Server.new({"user1", "user2"}))
+            local clients = server:mapClients()
 
-            local clientCallback = ClientCallback.new({
-                remoteFunction = mockRemoteFunction,
-            })
+            local serverCallback = cleaner:give(ServerCallback.new(server:createRemoteFunction("remoteFunction")))
+            local clientCallbacks = server:mapClients(mapClientCallbacks)
 
-            local serverCallback = ServerCallback.new({
-                remoteFunction = mockRemoteFunction,
-            })
-
-            clientCallback:setCallback(function()
-                error("Uh oh!")
+            clientCallbacks.user1:setCallback(function()
+                error("Whoops!")
             end)
 
-            local promise = serverCallback:callClientAsync("user")
+            clientCallbacks.user2:setCallback(function()
+                error("Whoops!")
+            end)
 
-            expect(Promise.is(promise)).to.equal(true)
-            expect(promise:getStatus()).to.equal(Promise.Status.Rejected)
+            local user1promise = serverCallback:callClientAsync(clients.user1)
+            local user2promise = serverCallback:callClientAsync(clients.user2)
 
-            clientCallback:destroy()
-            serverCallback:destroy()
-            mockRemoteFunction:destroy()
+            expect(user1promise:getStatus()).to.equal(Promise.Status.Rejected)
+            expect(user2promise:getStatus()).to.equal(Promise.Status.Rejected)
         end)
 
         it("should queue request if the client callback isn't set and resolve once it is", function()
-            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
+            local server = cleaner:give(MockNetwork.Server.new({"user1", "user2"}))
+            local clients = server:mapClients()
 
-            local clientCallback = ClientCallback.new({
-                remoteFunction = mockRemoteFunction,
-            })
+            local serverCallback = cleaner:give(ServerCallback.new(server:createRemoteFunction("remoteFunction")))
+            local clientCallbacks = server:mapClients(mapClientCallbacks)
 
-            local serverCallback = ServerCallback.new({
-                remoteFunction = mockRemoteFunction,
-            })
+            local user1promise = serverCallback:callClientAsync(clients.user1)
+            local user2promise = serverCallback:callClientAsync(clients.user2)
 
-            local promise = serverCallback:callClientAsync("user")
+            expect(user1promise:getStatus()).to.equal(Promise.Status.Started)
+            expect(user2promise:getStatus()).to.equal(Promise.Status.Started)
 
-            expect(promise:getStatus()).to.equal(Promise.Status.Started)
-
-            clientCallback:setCallback(function()
-                return true
+            clientCallbacks.user1:setCallback(function()
+                return 1
             end)
 
-            expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
-            expect(promise:expect()).to.equal(true)
+            clientCallbacks.user2:setCallback(function()
+                return 2
+            end)
 
-            clientCallback:destroy()
-            serverCallback:destroy()
-            mockRemoteFunction:destroy()
+            expect(user1promise:getStatus()).to.equal(Promise.Status.Resolved)
+            expect(user2promise:getStatus()).to.equal(Promise.Status.Resolved)
+
+            expect(user1promise:expect()).to.equal(1)
+            expect(user2promise:expect()).to.equal(2)
         end)
     end)
 
@@ -280,45 +249,29 @@ return function()
         it("should set destroyed field to true", function()
             local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverCallback = ServerCallback.new({
-                remoteFunction = mockRemoteFunction,
-            })
+            local serverCallback = ServerCallback.new(mockRemoteFunction)
 
             serverCallback:destroy()
 
             expect(serverCallback.destroyed).to.equal(true)
         end)
 
-        it("should reject any queued requests from the client with an error", function()
-            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
+        it("should reject queued requests from the client with an error", function()
+            local server = cleaner:give(MockNetwork.Server.new({"user1", "user2"}))
 
-            local clientCallback = ClientCallback.new({
-                remoteFunction = mockRemoteFunction,
-            })
+            local serverCallback = cleaner:give(ServerCallback.new(server:createRemoteFunction("remoteFunction")))
+            local clientCallbacks = server:mapClients(mapClientCallbacks)
 
-            local serverCallback = ServerCallback.new({
-                remoteFunction = mockRemoteFunction,
-            })
+            local user1promise = clientCallbacks.user1:callServerAsync()
+            local user2promise = clientCallbacks.user2:callServerAsync()
 
-            local promise0 = clientCallback:callServerAsync()
-            expect(promise0:getStatus()).to.equal(Promise.Status.Started)
+            expect(user1promise:getStatus()).to.equal(Promise.Status.Started)
+            expect(user2promise:getStatus()).to.equal(Promise.Status.Started)
 
-            serverCallback:flush()
-            expect(promise0:getStatus()).to.equal(Promise.Status.Rejected)
-
-            local promise1 = clientCallback:callServerAsync()
-            expect(promise1:getStatus()).to.equal(Promise.Status.Started)
-
-            serverCallback:setCallback(function(num)
-                return true
-            end)
-
-            expect(promise1:getStatus()).to.equal(Promise.Status.Resolved)
-            expect(promise1:expect()).to.equal(true)
-            
-            clientCallback:destroy()
             serverCallback:destroy()
-            mockRemoteFunction:destroy()
+
+            expect(user1promise:getStatus()).to.equal(Promise.Status.Rejected)
+            expect(user2promise:getStatus()).to.equal(Promise.Status.Rejected)
         end)
     end)
 end

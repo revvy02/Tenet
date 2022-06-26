@@ -10,13 +10,8 @@ return function()
         it("should return a value that changes properly from server changes", function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
 
-            local serverStream = ServerStream.new({
-                remoteEvent = mockRemoteEvent,
-            }, true)
-
-            local clientStream = ClientStream.new({
-                remoteEvent = mockRemoteEvent,
-            })
+            local serverStream = ServerStream.new(mockRemoteEvent, true)
+            local clientStream = ClientStream.new(mockRemoteEvent)
 
             local sdStore = serverStream:create("store", {
                 xp = 0,
@@ -49,13 +44,8 @@ return function()
         it("should return a changed signal that is fired properly from server changes", function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
 
-            local serverStream = ServerStream.new({
-                remoteEvent = mockRemoteEvent,
-            }, true)
-
-            local clientStream = ClientStream.new({
-                remoteEvent = mockRemoteEvent,
-            })
+            local serverStream = ServerStream.new(mockRemoteEvent, true)
+            local clientStream = ClientStream.new(mockRemoteEvent)
 
             local sdStore = serverStream:create("store", {
                 xp = 0,
@@ -103,13 +93,8 @@ return function()
         it("should return a reduced signal that is fired properly from server changes", function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
 
-            local serverStream = ServerStream.new({
-                remoteEvent = mockRemoteEvent,
-            }, true)
-
-            local clientStream = ClientStream.new({
-                remoteEvent = mockRemoteEvent,
-            })
+            local serverStream = ServerStream.new(mockRemoteEvent, true)
+            local clientStream = ClientStream.new(mockRemoteEvent)
 
             local sdStore = serverStream:create("store", {
                 xp = 0,
@@ -154,13 +139,8 @@ return function()
         it("should return a promise that resolves when a key is loaded", function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
 
-            local serverStream = ServerStream.new({
-                remoteEvent = mockRemoteEvent,
-            }, true)
-
-            local clientStream = ClientStream.new({
-                remoteEvent = mockRemoteEvent,
-            })
+            local serverStream = ServerStream.new(mockRemoteEvent, true)
+            local clientStream = ClientStream.new(mockRemoteEvent)
 
             local sdStore = serverStream:create("store", {
                 xp = 0,

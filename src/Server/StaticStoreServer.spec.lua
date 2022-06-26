@@ -1,4 +1,5 @@
 local MockNetwork = require(script.Parent.Parent.Parent.MockNetwork)
+local Promise = require(script.Parent.Parent.Parent.Promise)
 local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
 local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
 
@@ -6,116 +7,114 @@ local ClientStream = require(script.Parent.Parent.Client.ClientStream)
 local ServerStream = require(script.Parent.ServerStream)
 
 return function()
+    local cleaner = Cleaner.new()
+
+    local function mapClientStreams(id, client)
+        return id, cleaner:give(ClientStream.new(client:getRemoteEvent("remoteEvent")))
+    end
+
+    afterEach(function()
+        cleaner:work()
+    end)
+
+    afterAll(function()
+        cleaner:destroy()
+    end)
+
     describe("StaticStoreServer:getViewers", function()
-        it("should return a list of players that the static store is being streamed to", function()
-            local cleaner = Cleaner.new()
+        it("should return a list of players that are viewing the static store to", function()
+            local server = cleaner:give(MockNetwork.Server.new({"user1", "user2", "user3"}))
+            local clients = server:mapClients()
 
-            local server = cleaner:give(MockNetwork.Server.new({"user0", "user1", "user2"}))
-            local clients = server:getClientsMapped()
-
-            local serverStream = cleaner:give(ServerStream.new({
-                remoteEvent = server:createRemoteEvent("remoteEvent"),
-            }))
+            local serverStream = cleaner:give(ServerStream.new(server:getRemoteEvent("remoteEvent")))
 
             local ssServer = serverStream:create("store")
 
-            ssServer:stream(clients.user0)
             ssServer:stream(clients.user1)
+            ssServer:stream(clients.user2)
             
             local list = ssServer:getViewers()
 
-            expect(table.find(list, clients.user0)).to.be.ok()
             expect(table.find(list, clients.user1)).to.be.ok()
-            expect(table.find(list, clients.user2)).to.never.be.ok()
-
-            serverStream:destroy()
-            server:destroy()
+            expect(table.find(list, clients.user2)).to.be.ok()
+            expect(table.find(list, clients.user3)).to.never.be.ok()
         end)
     end)
 
     describe("StaticStoreServer:isViewing", function()
-        it("should return whether or not the static store is being streamed to the passed player", function()
-            local server, clients = MockNetwork.Server.new("user1", "user2", "user3")
+        it("should return whether or not the player is viewing the static store", function()
+            local server = cleaner:give(MockNetwork.Server.new({"user1", "user2", "user3"}))
+            local clients = server:mapClients()
 
-            local serverStream = ServerStream.new({
-                remoteEvent = server:createRemoteEvent("remoteEvent"),
-            })
+            local serverStream = cleaner:give(ServerStream.new(server:getRemoteEvent("remoteEvent")))
 
             local ssServer = serverStream:create("store")
 
-            ssServer:stream(user1)
-            ssServer:stream(user2)
+            ssServer:stream(clients.user1)
+            ssServer:stream(clients.user2)
             
-            expect(ssServer:isViewing(user1)).to.equal(true)
-            expect(ssServer:isViewing(user2)).to.equal(true)
-            expect(ssServer:isViewing(user3)).to.equal(false)
-
-            serverStream:destroy()
-            server:destroy()
+            expect(ssServer:isViewing(clients.user1)).to.equal(true)
+            expect(ssServer:isViewing(clients.user2)).to.equal(true)
+            expect(ssServer:isViewing(clients.user3)).to.equal(false)
         end)
     end)
 
     describe("StaticStoreServer:stream", function()
-        it("should create the static store on the client with initial state", function()
-            local server, user1, user2 = MockNetwork.Server.new("user1", "user2", "user3")
+        it("should create the static store on the client with the current server state", function()
+            local server = cleaner:give(MockNetwork.Server.new({"user1", "user2"}))
+            local clients = server:mapClients()
 
-            local serverStream = ServerStream.new({
-                remoteEvent = server:createRemoteEvent("remoteEvent"),
-            })
-
-            local clientStream = ClientStream.new({
-                remoteEvent = mockRemoteEvent,
-            })
+            local serverStream = cleaner:give(ServerStream.new(server:getRemoteEvent("remoteEvent")))
+            local clientStreams = server:mapClients(mapClientStreams)
 
             local ssServer = serverStream:create("store", {
                 xp = 1000,
                 inv = {"gun"},
             })
 
-            ssServer:stream("user")
+            ssServer:stream(clients.user1)
 
-            local ssClient = clientStream:get("store")
+            local ssClients = {
+                user1 = clientStreams.user1:get("store"),
+                user2 = clientStreams.user2:get("store"),
+            }
 
-            expect(ssClient).to.be.ok()
-            expect(ssClient:getValue("xp")).to.equal(1000)
-            expect(ssClient:getValue("inv")[1]).to.equal("gun")
+            expect(ssClients.user1).to.be.ok()
+            expect(ssClients.user1:getValue("xp")).to.equal(1000)
+            expect(ssClients.user1:getValue("inv")[1]).to.equal("gun")
             
-            clientStream:destroy()
-            serverStream:destroy()
-            mockRemoteEvent:destroy()
+            expect(ssClients.user2).to.never.be.ok()
         end)
 
         it("should fire the streamed signal on the client", function()
-            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
+            local server = cleaner:give(MockNetwork.Server.new({"user1", "user2"}))
+            local clients = server:mapClients()
 
-            local serverStream = ServerStream.new({
-                remoteEvent = mockRemoteEvent,
-            })
-
-            local clientStream = ClientStream.new({
-                remoteEvent = mockRemoteEvent,
-            })
+            local serverStream = cleaner:give(ServerStream.new(server:getRemoteEvent("remoteEvent")))
+            local clientStreams = server:mapClients(mapClientStreams)
 
             local ssServer = serverStream:create("store", {
                 xp = 1000,
                 inv = {"gun"},
             })
 
-            local passed = false
+            local user1Promise = clientStreams.user1.streamed:promise()
+            local user2Promise = clientStreams.user2.streamed:promise()
 
-            clientStream.streamed:connect(function(owner)
-                if owner == "store" then
-                    passed = true
-                end
-            end)
+            expect(user1Promise:getStatus()).to.equal(Promise.Status.Started)
+            expect(user2Promise:getStatus()).to.equal(Promise.Status.Started)
 
-            ssServer:stream("user")
+            ssServer:stream(clients.user1)
             
-            expect(passed).to.equal(true)
+            expect(user1Promise:getStatus()).to.equal(Promise.Status.Resolved)
+            expect(user2Promise:getStatus()).to.equal(Promise.Status.Started)
 
-            clientStream:destroy()
-            serverStream:destroy()
-            mockRemoteEvent:destroy()
+            expect(select(1, user1Promise:expect())).to.equal("store")
+
+            ssServer:stream(clients.user2)
+
+            expect(user2Promise:getStatus()).to.equal(Promise.Status.Resolved)
+            expect(select(1, user2Promise:expect())).to.equal("store")
         end)
     end)
 
@@ -191,9 +190,7 @@ return function()
         it("should properly update the server", function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
 
-            local serverStream = ServerStream.new({
-                remoteEvent = mockRemoteEvent,
-            })
+            local serverStream = ServerStream.new(mockRemoteEvent)
 
             local ssServer = serverStream:create("store", {
                 xp = 1000,
@@ -214,9 +211,6 @@ return function()
             expect(select(1, reducedPromise:expect())).to.equal("xp")
             expect(select(2, reducedPromise:expect())).to.equal("setValue")
             expect(select(3, reducedPromise:expect())).to.equal(2000)
-
-            serverStream:destroy()
-            mockRemoteEvent:destroy()
         end)
 
         it("should properly update viewing clients", function()

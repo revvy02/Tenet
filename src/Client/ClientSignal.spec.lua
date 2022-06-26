@@ -20,9 +20,7 @@ return function()
         it("should create a new ClientSignal", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local clientSignal = cleaner:give(ClientSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local clientSignal = cleaner:give(ClientSignal.new(mockRemoteEvent))
             
             expect(clientSignal).to.be.a("table")
             expect(getmetatable(clientSignal)).to.equal(ClientSignal)
@@ -33,13 +31,8 @@ return function()
         it("should fire the server with the args", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
-
-            local clientSignal = cleaner:give(ClientSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local serverSignal = cleaner:give(ServerSignal.new(mockRemoteEvent))
+            local clientSignal = cleaner:give(ClientSignal.new(mockRemoteEvent))
 
             local count = 0
 
@@ -57,13 +50,8 @@ return function()
         it("should queue args on server until an activating connection is made", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
-
-            local clientSignal = cleaner:give(ClientSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local serverSignal = cleaner:give(ServerSignal.new(mockRemoteEvent))
+            local clientSignal = cleaner:give(ClientSignal.new(mockRemoteEvent))
 
             local count = 0
 
@@ -83,13 +71,8 @@ return function()
         it("should prevent flushed args from being processed by an activating connection", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
-
-            local clientSignal = cleaner:give(ClientSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local serverSignal = cleaner:give(ServerSignal.new(mockRemoteEvent))
+            local clientSignal = cleaner:give(ClientSignal.new(mockRemoteEvent))
 
             local count = 0
             
@@ -113,13 +96,8 @@ return function()
         it("should process queued args when an activating conection is made", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
-
-            local clientSignal = cleaner:give(ClientSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local serverSignal = cleaner:give(ServerSignal.new(mockRemoteEvent))
+            local clientSignal = cleaner:give(ClientSignal.new(mockRemoteEvent))
             
             local count = 0
 
@@ -137,13 +115,8 @@ return function()
         it("should return a connection that works properly", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
-
-            local clientSignal = cleaner:give(ClientSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local serverSignal = cleaner:give(ServerSignal.new(mockRemoteEvent))
+            local clientSignal = cleaner:give(ClientSignal.new(mockRemoteEvent))
 
             local count1, count2 = 0, 0
 
@@ -178,13 +151,8 @@ return function()
         it("should return a promise that resolves properly if args are queued", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
-
-            local clientSignal = cleaner:give(ClientSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local serverSignal = cleaner:give(ServerSignal.new(mockRemoteEvent))
+            local clientSignal = cleaner:give(ClientSignal.new(mockRemoteEvent))
 
             serverSignal:fireClient("user", 1)
             serverSignal:fireClient("user", 2)
@@ -210,13 +178,8 @@ return function()
         it("should return a promise that resolves properly if args aren't queued", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
-
-            local clientSignal = cleaner:give(ClientSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local serverSignal = cleaner:give(ServerSignal.new(mockRemoteEvent))
+            local clientSignal = cleaner:give(ClientSignal.new(mockRemoteEvent))
 
             local promise1 = clientSignal:promise()
             local promise2 = clientSignal:promise()
@@ -246,9 +209,7 @@ return function()
         it("should set destroyed field to true", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new())
 
-            local clientSignal = ClientSignal.new({
-                remoteEvent = mockRemoteEvent,
-            })
+            local clientSignal = ClientSignal.new(mockRemoteEvent)
 
             clientSignal:destroy()
 

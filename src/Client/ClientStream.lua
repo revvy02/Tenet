@@ -36,11 +36,11 @@ local handlers = {
 local ClientStream = {}
 ClientStream.__index = ClientStream
 
-function ClientStream.new(remotes)
+function ClientStream.new(remoteEvent)
     local self = setmetatable({}, ClientStream)
 
     self._cleaner = Cleaner.new()
-    self._clientSignal = self._cleaner:give(ClientSignal.new(remotes))
+    self._clientSignal = self._cleaner:give(ClientSignal.new(remoteEvent))
 
     --[=[
         Signal that gets fired once a store is streamed in

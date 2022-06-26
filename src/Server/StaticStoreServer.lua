@@ -8,16 +8,19 @@ local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
 local StaticStoreServer = {}
 StaticStoreServer.__index = StaticStoreServer
 
-function StaticStoreServer._new(serverSignal, owner, initial, reducers)
+function StaticStoreServer._new(serverStream, owner, initial)
     local self = setmetatable({}, StaticStoreServer)
 
     self._owner = owner
+    self._serverStream = serverStream
+    self._module = self._serverStream._module
+    self._serverSignal = self._serverStream._serverSignal
+
     self._viewers = {}
-    self._serverSignal = serverSignal
 
     self._cleaner = Cleaner.new()
 
-    self._store = self._cleaner:give(Slick.Store.new(initial, reducers))
+    self._store = self._cleaner:give(Slick.Store.new(initial, self._module and require(self._module)))
 
     self.reduced = self._store.reduced
     self.changed = self._store.changed
@@ -31,10 +34,11 @@ function StaticStoreServer._new(serverSignal, owner, initial, reducers)
     end)
 
     self._cleaner:give(Players.PlayerRemoving:Connect(function(player)
-        for key in pairs(self._subscribers) do
-            self:unsubscribe(key, player)
-        end
+        self:unstream(player)
     end))
+
+    self._serverStream._cleaner:set(owner, self)
+    self._serverStream.created:fire(owner, self)
 
     return self
 end
@@ -59,7 +63,7 @@ function StaticStoreServer:stream(player)
 
     table.insert(self._viewers, player)
 
-    self._serverSignal:fireClient(player, "static", self._owner, self._store:getState(), self._reducersModule)
+    self._serverSignal:fireClient(player, "static", self._owner, self._store:getState(), self._serverStream._module)
 end
 
 function StaticStoreServer:unstream(player)
@@ -97,6 +101,8 @@ end
 function StaticStoreServer:destroy()
     self._cleaner:destroy()
     self.destroyed = true
+
+    self._serverStream.removed:fire(self._owner)
 end
 
 return StaticStoreServer

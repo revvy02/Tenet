@@ -17,12 +17,10 @@ return function()
     end)
 
     describe("ClientStream.new", function()
-        it("should create a new ClientDynamicStream instance", function()
+        it("should create a new ClientStream instance", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local clientStream = cleaner:give(ClientStream.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local clientStream = cleaner:give(ClientStream.new(mockRemoteEvent))
     
             expect(clientStream).to.be.a("table")
             expect(getmetatable(clientStream)).to.equal(ClientStream)
@@ -31,15 +29,9 @@ return function()
 
     describe("ClientStream:get", function()
         it("should return nil if no dynamic store exists for the owner yet", function()
-            local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new())
+            local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverStream = cleaner:give(ServerStream.new({
-                remoteEvent = mockRemoteEvent,
-            }))
-
-            local clientStream = cleaner:give(ClientStream.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local clientStream = cleaner:give(ClientStream.new(mockRemoteEvent))
 
             expect(clientStream:get("store")).to.never.be.ok()
         end)
@@ -47,13 +39,8 @@ return function()
         it("should return the store for the owner if it exists", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverStream = cleaner:give(ServerStream.new({
-                remoteEvent = mockRemoteEvent,
-            }))
-
-            local clientStream = cleaner:give(ClientStream.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local serverStream = cleaner:give(ServerStream.new(mockRemoteEvent))
+            local clientStream = cleaner:give(ClientStream.new(mockRemoteEvent))
 
             serverStream:create("store"):stream("user")
             
@@ -65,13 +52,8 @@ return function()
         it("should return a promise that resolves when a store with the passed owner is streamed in", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverStream = cleaner:give(ServerStream.new({
-                remoteEvent = mockRemoteEvent,
-            }))
-
-            local clientStream = cleaner:give(ClientStream.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local serverStream = cleaner:give(ServerStream.new(mockRemoteEvent))
+            local clientStream = cleaner:give(ClientStream.new(mockRemoteEvent))
             
             local promise = clientStream:streamedAsync("store")
 
@@ -86,15 +68,9 @@ return function()
 
     describe("ClientStream:destroy", function()
         it("should disconnect any connections", function()
-            local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new())
+            local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverStream = cleaner:give(ServerStream.new({
-                remoteEvent = mockRemoteEvent,
-            }))
-
-            local clientStream = ClientStream.new({
-                remoteEvent = mockRemoteEvent,
-            })
+            local clientStream = ClientStream.new(mockRemoteEvent)
 
             local connection0 = clientStream.streamed:connect(function() end)
             local connection1 = clientStream.unstreaming:connect(function() end)
@@ -106,11 +82,8 @@ return function()
         end)
 
         it("should set the destroyed field to true", function()
-            local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new())
-
-            local clientStream = ClientStream.new({
-                remoteEvent = mockRemoteEvent,
-            })
+            local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
+            local clientStream = ClientStream.new(mockRemoteEvent)
 
             clientStream:destroy()
 

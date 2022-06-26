@@ -9,9 +9,7 @@ return function()
     local cleaner = Cleaner.new()
     
     local function mapClientSignals(id, client)
-        return id, cleaner:give(ClientSignal.new({
-            remoteEvent = client:getRemoteEvent("remoteEvent"),
-        }))
+        return id, cleaner:give(ClientSignal.new(client:getRemoteEvent("remoteEvent")))
     end
 
     afterEach(function()
@@ -26,9 +24,7 @@ return function()
         it("should create a new ServerSignal object", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local serverSignal = cleaner:give(ServerSignal.new(mockRemoteEvent))
 
             expect(serverSignal).to.be.a("table")
             expect(getmetatable(serverSignal)).to.equal(ServerSignal)
@@ -53,9 +49,7 @@ return function()
                 end
             end
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = server:createRemoteEvent("remoteEvent"),
-            }, {
+            local serverSignal = cleaner:give(ServerSignal.new(server:createRemoteEvent("remoteEvent"), {
                 middleware({
                     index = 1,
                     password = "1234",
@@ -98,10 +92,7 @@ return function()
             local server = cleaner:give(MockNetwork.Server.new({"user1", "user2"}))
             local clients = server:mapClients()
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = server:createRemoteEvent("remoteEvent"),
-            }))
-
+            local serverSignal = cleaner:give(ServerSignal.new(server:createRemoteEvent("remoteEvent")))
             local clientSignals = server:mapClients(mapClientSignals)
 
             local counts = {
@@ -129,10 +120,7 @@ return function()
             local server = cleaner:give(MockNetwork.Server.new({"user1", "user2"}))
             local clients = server:mapClients()
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = server:createRemoteEvent("remoteEvent"),
-            }))
-
+            local serverSignal = cleaner:give(ServerSignal.new(server:createRemoteEvent("remoteEvent")))
             local clientSignals = server:mapClients(mapClientSignals)
 
             local counts = {
@@ -162,10 +150,7 @@ return function()
             local server = cleaner:give(MockNetwork.Server.new({"user1", "user2", "user3"}))
             local clients = server:mapClients()
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = server:createRemoteEvent("remoteEvent"),
-            }))
-
+            local serverSignal = cleaner:give(ServerSignal.new(server:createRemoteEvent("remoteEvent")))
             local clientSignals = server:mapClients(mapClientSignals)
 
             local counts = {
@@ -198,10 +183,7 @@ return function()
             local server = cleaner:give(MockNetwork.Server.new({"user1", "user2", "user3"}))
             local clients = server:mapClients()
             
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = server:createRemoteEvent("remoteEvent"),
-            }))
-
+            local serverSignal = cleaner:give(ServerSignal.new(server:createRemoteEvent("remoteEvent")))
             local clientSignals = server:mapClients(mapClientSignals)
 
             local counts = {
@@ -236,10 +218,7 @@ return function()
             local server = cleaner:give(MockNetwork.Server.new({"user1", "user2"}))
             local clients = server:mapClients()
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = server:createRemoteEvent("remoteEvent"),
-            }))
-
+            local serverSignal = cleaner:give(ServerSignal.new(server:createRemoteEvent("remoteEvent")))
             local clientSignals = server:mapClients(mapClientSignals)
 
             local counts = {
@@ -266,10 +245,7 @@ return function()
             local server = cleaner:give(MockNetwork.Server.new({"user1", "user2"}))
             local clients = server:mapClients()
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = server:createRemoteEvent("remoteEvent"),
-            }))
-
+            local serverSignal = cleaner:give(ServerSignal.new(server:createRemoteEvent("remoteEvent")))
             local clientSignals = server:mapClients(mapClientSignals)
 
             local counts = {
@@ -298,10 +274,7 @@ return function()
             local server = cleaner:give(MockNetwork.Server.new({"user1", "user2"}))
             local clients = server:mapClients()
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = server:createRemoteEvent("remoteEvent"),
-            }))
-
+            local serverSignal = cleaner:give(ServerSignal.new(server:createRemoteEvent("remoteEvent")))
             local clientSignals = server:mapClients(mapClientSignals)
 
             local counts = {
@@ -333,10 +306,7 @@ return function()
             local server = cleaner:give(MockNetwork.Server.new({"user1", "user2"}))
             local clients = server:mapClients()
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = server:createRemoteEvent("remoteEvent"),
-            }))
-
+            local serverSignal = cleaner:give(ServerSignal.new(server:createRemoteEvent("remoteEvent")))
             local clientSignals = server:mapClients(mapClientSignals)
 
             local counts = {
@@ -359,21 +329,16 @@ return function()
         it("should return a connection that works properly", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
-
-            local clientSignal = cleaner:give(ClientSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local serverSignal = cleaner:give(ServerSignal.new(mockRemoteEvent))
+            local clientSignal = cleaner:give(ClientSignal.new(mockRemoteEvent))
 
             local count0, count1 = 0, 0
 
-            local connection1 = serverSignal:connect(function(user, num)
+            local connection1 = serverSignal:connect(function(_, num)
                 count0 += num
             end)
 
-            local connection2 = serverSignal:connect(function(user, num)
+            local connection2 = serverSignal:connect(function(_, num)
                 count1 += num
             end)
 
@@ -395,13 +360,8 @@ return function()
         it("should return a promise that resolves properly if args are queued", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
-
-            local clientSignal = cleaner:give(ClientSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local serverSignal = cleaner:give(ServerSignal.new(mockRemoteEvent))
+            local clientSignal = cleaner:give(ClientSignal.new(mockRemoteEvent))
 
             clientSignal:fireServer(1)
 
@@ -423,13 +383,8 @@ return function()
         it("should return a promise that resolves properly if args aren't queued", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverSignal = cleaner:give(ServerSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
-
-            local clientSignal = cleaner:give(ClientSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }))
+            local serverSignal = cleaner:give(ServerSignal.new(mockRemoteEvent))
+            local clientSignal = cleaner:give(ClientSignal.new(mockRemoteEvent))
 
             local promise0 = serverSignal:promise()
             local promise1 = serverSignal:promise()
@@ -459,9 +414,7 @@ return function()
         it("should set destroyed field to true", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverSignal = ServerSignal.new({
-                remoteEvent = mockRemoteEvent,
-            })
+            local serverSignal = ServerSignal.new(mockRemoteEvent)
 
             serverSignal:destroy()
 
@@ -481,9 +434,7 @@ return function()
                 end
             end
 
-            local serverSignal = ServerSignal.new({
-                remoteEvent = mockRemoteEvent,
-            }, {
+            local serverSignal = ServerSignal.new(mockRemoteEvent, {
                 middleware(function()
                     destroyed1 = true
                 end),
@@ -504,9 +455,7 @@ return function()
         it("should disconnect any connections", function()
             local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
 
-            local serverSignal = ServerSignal.new({
-                remoteEvent = mockRemoteEvent,
-            })
+            local serverSignal = ServerSignal.new(mockRemoteEvent)
 
             local connection1 = serverSignal:connect(function() end)
 

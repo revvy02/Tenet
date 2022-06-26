@@ -15,13 +15,13 @@ ClientCallback.__index = ClientCallback
     @param remotes table
     @return ClientCallback
 ]=]
-function ClientCallback.new(remotes)
+function ClientCallback.new(remoteFunction)
     local self = setmetatable({}, ClientCallback)
 
     self._cleaner = Cleaner.new()
 
     self._queue = {}
-    self._remote = remotes.remoteFunction
+    self._remote = remoteFunction
 
     self._remote.OnClientInvoke = function(...)
         if not self._callback then
