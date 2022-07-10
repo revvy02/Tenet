@@ -25,6 +25,114 @@ return function()
             expect(clientSignal).to.be.a("table")
             expect(getmetatable(clientSignal)).to.equal(ClientSignal)
         end)
+
+        it("should handle inbound middleware properly", function()
+            local mockRemoteEvent  = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
+
+            local dropped = {0, 0}
+            local payloads = {}
+
+            local function middleware(config)
+                return function(nextMiddleware, _)
+                    return function(...)
+                        if select(config.index, ...) == config.password then
+                            return nextMiddleware(...)
+                        else
+                            config.onDropped(...)
+                        end
+                    end
+                end
+            end
+
+            local serverSignal = cleaner:give(ServerSignal.new(mockRemoteEvent))
+
+            local clientSignal = cleaner:give(ClientSignal.new(mockRemoteEvent, {
+                inbound = {
+                    middleware({
+                        index = 1,
+                        password = "1234",
+                        onDropped = function()
+                            dropped[1] += 1
+                        end,
+                    }),
+                    middleware({
+                        index = 2,
+                        password = "password",
+                        onDropped = function()
+                            dropped[2] += 1
+                        end,
+                    })
+                },
+            }))
+
+            clientSignal:connect(function(_, _, message)
+                table.insert(payloads, message)
+            end)
+
+            serverSignal:fireClient("user", "4321", "password", "payload1")
+            serverSignal:fireClient("user", "1234", "drowssap", "payload2")
+            serverSignal:fireClient("user", "1234", "password", "payload3")
+
+            expect(dropped[1]).to.equal(1)
+            expect(dropped[2]).to.equal(1)
+
+            expect(#payloads).to.equal(1)
+            expect(payloads[1]).to.equal("payload3")
+        end)
+
+        it("should handle outbound middleware properly", function()
+            local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
+
+            local dropped = {0, 0}
+            local payloads = {}
+
+            local function middleware(config)
+                return function(nextMiddleware, _)
+                    return function(...)
+                        if select(config.index, ...) == config.password then
+                            return nextMiddleware(...)
+                        else
+                            config.onDropped(...)
+                        end
+                    end
+                end
+            end
+
+            local serverSignal = cleaner:give(ServerSignal.new(mockRemoteEvent))
+
+            local clientSignal = cleaner:give(ClientSignal.new(mockRemoteEvent, {
+                outbound = {
+                    middleware({
+                        index = 1,
+                        password = "1234",
+                        onDropped = function()
+                            dropped[1] += 1
+                        end,
+                    }),
+                    middleware({
+                        index = 2,
+                        password = "password",
+                        onDropped = function()
+                            dropped[2] += 1
+                        end,
+                    })
+                },
+            }))
+
+            serverSignal:connect(function(_, _, _, payload)
+                table.insert(payloads, payload)
+            end)
+
+            clientSignal:fireServer("4321", "password", "payload1")
+            clientSignal:fireServer("1234", "drowssap", "payload2")
+            clientSignal:fireServer("1234", "password", "payload3")
+
+            expect(dropped[1]).to.equal(1)
+            expect(dropped[2]).to.equal(1)
+
+            expect(#payloads).to.equal(1)
+            expect(payloads[1]).to.equal("payload3")
+        end)
     end)
 
     describe("ClientSignal:fireServer", function()
@@ -214,6 +322,51 @@ return function()
             clientSignal:destroy()
 
             expect(clientSignal.destroyed).to.equal(true)
+        end)
+        
+        it("should cleanup middleware", function()
+            local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
+            local destroyed1, destroyed2, destroyed3, destroyed4 = false, false, false, false
+
+            local function middleware(onDestroyed)
+                return function(nextMiddleware, _)
+                    return function(player, ...)
+                        return nextMiddleware(player, ...)
+                    end,
+                    onDestroyed
+                end
+            end
+
+            local clientSignal = ClientSignal.new(mockRemoteEvent, {
+                inbound = {
+                    middleware(function()
+                        destroyed1 = true
+                    end),
+                    middleware(function()
+                        destroyed2 = true
+                    end),
+                },
+                outbound = {
+                    middleware(function()
+                        destroyed3 = true
+                    end),
+                    middleware(function()
+                        destroyed4 = true
+                    end),
+                },
+            })
+
+            expect(destroyed1).to.equal(false)
+            expect(destroyed2).to.equal(false)
+            expect(destroyed3).to.equal(false)
+            expect(destroyed4).to.equal(false)
+
+            clientSignal:destroy()
+
+            expect(destroyed1).to.equal(true)
+            expect(destroyed2).to.equal(true)
+            expect(destroyed3).to.equal(true)
+            expect(destroyed4).to.equal(true)
         end)
     end)
 end

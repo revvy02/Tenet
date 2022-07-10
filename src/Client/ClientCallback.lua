@@ -1,5 +1,6 @@
 local Promise = require(script.Parent.Parent.Parent.Promise)
 local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
+local NetPass = require(script.Parent.Parent.Parent.NetPass)
 
 --[=[
     ClientCallback class
@@ -15,7 +16,7 @@ ClientCallback.__index = ClientCallback
     @param remotes table
     @return ClientCallback
 ]=]
-function ClientCallback.new(remoteFunction)
+function ClientCallback.new(remoteFunction, options)
     local self = setmetatable({}, ClientCallback)
 
     self._cleaner = Cleaner.new()
@@ -23,7 +24,7 @@ function ClientCallback.new(remoteFunction)
     self._queue = {}
     self._remote = remoteFunction
 
-    self._remote.OnClientInvoke = function(...)
+    local onClientInvoke = function(...)
         if not self._callback then
             warn("ClientCallback has no callback set, so request is being queued")
             
@@ -33,6 +34,44 @@ function ClientCallback.new(remoteFunction)
         end
 
         return self._callback(...)
+    end
+
+    if options then
+        if options.inbound then
+            for i = #options.inbound, 1, -1 do
+                local nextOnClientInvoke, cleanup = options.inbound[i](onClientInvoke, self)
+                onClientInvoke = nextOnClientInvoke
+
+                if cleanup then
+                    self._cleaner:give(cleanup)
+                end
+            end
+        end
+
+        if options.outbound then
+            local unboundCallServerAsync = self.callServerAsync
+
+            local callServerAsync = function(client, ...)
+                return unboundCallServerAsync(self, client, ...)
+            end
+
+            for i = #options.outbound, 1, -1 do
+                local nextCallServerAsync, cleanup = options.outbound[i](callServerAsync, self)
+                callServerAsync = nextCallServerAsync
+
+                if cleanup then
+                    self._cleaner:give(cleanup)
+                end
+            end
+
+            self.callServerAsync = function(_, client, ...)
+                return callServerAsync(client, ...)
+            end
+        end
+    end
+    
+    self._remote.OnClientInvoke = function(...)
+        return NetPass.encode(onClientInvoke(NetPass.decode(...)))
     end
 
     return self
@@ -74,7 +113,7 @@ end
 ]=]
 function ClientCallback:callServerAsync(...)
     return Promise.try(function(...)
-        return self._remote:InvokeServer(...)
+        return NetPass.decode(self._remote:InvokeServer(NetPass.encode(...)))
     end, ...)
 end
 

@@ -1,12 +1,11 @@
-local Players = game:GetService("Players")
-
 local Promise = require(script.Parent.Parent.Parent.Promise)
 local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
+local NetPass = require(script.Parent.Parent.Parent.NetPass)
 
 local ServerCallback = {}
 ServerCallback.__index = ServerCallback
 
-function ServerCallback.new(remoteFunction, middleware)
+function ServerCallback.new(remoteFunction, options)
     local self = setmetatable({}, ServerCallback)
 
     self._cleaner = Cleaner.new()
@@ -14,11 +13,7 @@ function ServerCallback.new(remoteFunction, middleware)
     
     self._queue = {}
 
-    self._wrappedCallback = function(client, ...)
-        return self:callServer(client, ...)
-    end
-
-    local boundedCall = function(...)
+    local onServerInvoke = function(client, ...)
         if not self._callback then
             warn("ServerCallback has no callback set, so request is being queued")
 
@@ -27,22 +22,46 @@ function ServerCallback.new(remoteFunction, middleware)
             assert(coroutine.yield())
         end
 
-        return self._callback(...)
+        return self._callback(client, ...)
     end
 
-    if middleware then
-        for i = #middleware, 1, -1 do
-            local newBoundedCall, cleanup = middleware[i](boundedCall, self)
+    if options then
+        if options.inbound then
+            for i = #options.inbound, 1, -1 do
+                local nextOnServerInvoke, cleanup = options.inbound[i](onServerInvoke, self)
+                onServerInvoke = nextOnServerInvoke
 
-            boundedCall = newBoundedCall
+                if cleanup then
+                    self._cleaner:give(cleanup)
+                end
+            end
+        end
 
-            if cleanup then
-                self._cleaner:give(cleanup)
+        if options.outbound then
+            local unboundCallClientAsync = self.callClientAsync
+
+            local callClientAsync = function(client, ...)
+                return unboundCallClientAsync(self, client, ...)
+            end
+
+            for i = #options.outbound, 1, -1 do
+                local nextCallClientAsync, cleanup = options.outbound[i](callClientAsync, self)
+                callClientAsync = nextCallClientAsync
+
+                if cleanup then
+                    self._cleaner:give(cleanup)
+                end
+            end
+
+            self.callClientAsync = function(_, client, ...)
+                return callClientAsync(client, ...)
             end
         end
     end
-
-    self._remote.OnServerInvoke = boundedCall
+    
+    self._remote.OnServerInvoke = function(client, ...)
+        return NetPass.encode(onServerInvoke(client, NetPass.decode(...)))
+    end
 
     return self
 end
@@ -69,7 +88,7 @@ end
 
 function ServerCallback:callClientAsync(client, ...)
     return Promise.try(function(...)
-        return self._remote:InvokeClient(...)
+        return NetPass.decode(self._remote:InvokeClient(client, NetPass.encode(...)))
     end, client, ...)
 end
 

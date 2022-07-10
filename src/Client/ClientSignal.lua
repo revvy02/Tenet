@@ -1,4 +1,5 @@
 local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
+local NetPass = require(script.Parent.Parent.Parent.NetPass)
 local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
 
 --[=[
@@ -9,7 +10,7 @@ local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
 local ClientSignal = {}
 ClientSignal.__index = ClientSignal
 
-function ClientSignal.new(remoteEvent)
+function ClientSignal.new(remoteEvent, options)
     local self = setmetatable({}, ClientSignal)
 
     self._cleaner = Cleaner.new()
@@ -21,10 +22,46 @@ function ClientSignal.new(remoteEvent)
     self._signal = self._cleaner:give(TrueSignal.new(false, true))
     
     self._remote = remoteEvent
+
+    local unboundFireServer = self.fireServer
+
+    local fireServer = function(client, ...)
+        unboundFireServer(self, client, ...)
+    end
+
+    local onClientEvent = function(client, ...)
+        self._signal:fire(client, NetPass.decode(...))
+    end
     
-    self._cleaner:give(self._remote.OnClientEvent:Connect(function(...)
-        self._signal:fire(...)
-    end))
+    if options then
+        if options.inbound then
+            for i = #options.inbound, 1, -1 do
+                local nextOnClientEvent, cleanup = options.inbound[i](onClientEvent, self)
+                onClientEvent = nextOnClientEvent
+
+                if cleanup then
+                    self._cleaner:give(cleanup)
+                end
+            end
+        end
+
+        if options.outbound then
+            for i = #options.outbound, 1, -1 do
+                local nextFireServer, cleanup = options.outbound[i](fireServer, self)
+                fireServer = nextFireServer
+
+                if cleanup then
+                    self._cleaner:give(cleanup)
+                end
+            end
+
+            self.fireServer = function(_, client, ...)
+                fireServer(client, ...)
+            end
+        end
+    end
+
+    self._cleaner:give(self._remote.OnClientEvent:Connect(onClientEvent))
 
     return self
 end
@@ -35,7 +72,7 @@ end
     @param ... any
 ]=]
 function ClientSignal:fireServer(...)
-    self._remote:FireServer(...)
+    self._remote:FireServer(NetPass.encode(...))
 end
 
 --[=[

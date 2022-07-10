@@ -1,14 +1,11 @@
 local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
+local NetPass = require(script.Parent.Parent.Parent.NetPass)
 local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
 
 local ServerSignal = {}
 ServerSignal.__index = ServerSignal
 
-function ServerSignal.new(remoteEvent, inboundMiddleware, outboundMiddleware)
-    --[[
-        inbound for ratelimiting, rttcing, deserializing
-        outbound for serializing, throttling
-    ]]
+function ServerSignal.new(remoteEvent, options)
     local self = setmetatable({}, ServerSignal)
 
     self._cleaner = Cleaner.new()
@@ -24,49 +21,51 @@ function ServerSignal.new(remoteEvent, inboundMiddleware, outboundMiddleware)
     ]]
     self._remote = remoteEvent
 
-    --[[
-        wrap fire in middleware (server received)
-    ]]
-    local fireInbound = function(client, ...)
-        self._signal:fire(client, ...)
+    local unboundFireClient = self.fireClient
+
+    local fireClient = function(client, ...)
+        unboundFireClient(self, client, ...)
     end
 
-    local fireOutbound = function(client, ...)
-        self._remote:FireClient(client, ...)
+    local onServerEvent = function(client, ...)
+        self._signal:fire(client, NetPass.decode(...))
     end
     
-    if inboundMiddleware then
-        for i = #inboundMiddleware, 1, -1 do
-            local nextInbound, cleanup = inboundMiddleware[i](fireInbound, self)
+    if options then
+        if options.inbound then
+            for i = #options.inbound, 1, -1 do
+                local nextOnServerEvent, cleanup = options.inbound[i](onServerEvent, self)
+                onServerEvent = nextOnServerEvent
 
-            if cleanup then
-                self._cleaner:give(cleanup)
+                if cleanup then
+                    self._cleaner:give(cleanup)
+                end
+            end
+        end
+
+        if options.outbound then
+            for i = #options.outbound, 1, -1 do
+                local nextFireClient, cleanup = options.outbound[i](fireClient, self)
+                fireClient = nextFireClient
+
+                if cleanup then
+                    self._cleaner:give(cleanup)
+                end
             end
 
-            fireInbound = nextInbound
+            self.fireClient = function(_, client, ...)
+                fireClient(client, ...)
+            end
         end
     end
 
-    if outboundMiddleware then
-        for i = #outboundMiddleware, 1, -1 do
-            local nextOutbound, cleanup = outboundMiddleware[i](fireOutbound, self)
-
-            if cleanup then
-                self._cleaner:give(cleanup)
-            end
-
-            fireOutbound = nextOutbound
-        end
-    end
-
-    self.fireClient = fireOutbound
-    self._cleaner:give(self._remote.OnServerEvent:Connect(fireInbound))
-
+    self._cleaner:give(self._remote.OnServerEvent:Connect(onServerEvent))
+    
     return self
 end
 
 function ServerSignal:fireClient(client, ...)
-    self._remote:FireClient(client, ...)
+    self._remote:FireClient(client, NetPass.encode(...))
 end
 
 function ServerSignal:fireClients(clients, ...)

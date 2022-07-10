@@ -30,11 +30,11 @@ return function()
             expect(getmetatable(serverCallback)).to.equal(ServerCallback)
         end)
 
-        it("should handle middleware properly", function()
+        it("should handle inbound middleware properly", function()
             local server = cleaner:give(MockNetwork.Server.new({"user1", "user2", "user3"}))
             local clients = server:mapClients()
 
-            local drops = {}
+            local dropped = {}
             local messages = {}
 
             local function middleware(config)
@@ -50,20 +50,22 @@ return function()
             end
 
             local serverCallback = cleaner:give(ServerCallback.new(server:createRemoteFunction("remoteFunction"), {
-                middleware({
-                    index = 1,
-                    password = "1234",
-                    onDropped = function(player)
-                        drops[player] = 1
-                    end,
-                }),
-                middleware({
-                    index = 2,
-                    password = "password",
-                    onDropped = function(player)
-                        drops[player] = 2
-                    end,
-                })
+                inbound = {
+                    middleware({
+                        index = 1,
+                        password = "1234",
+                        onDropped = function(player)
+                            dropped[player] = 1
+                        end,
+                    }),
+                    middleware({
+                        index = 2,
+                        password = "password",
+                        onDropped = function(player)
+                            dropped[player] = 2
+                        end,
+                    })
+                },
             }))
 
             local clientCallbacks = server:mapClients(mapClientCallbacks)
@@ -72,20 +74,77 @@ return function()
                 messages[player] = message
             end)
 
-            clientCallbacks.user1:callServerAsync("4321", "password", "payload")
-            clientCallbacks.user2:callServerAsync("1234", "drowssap", "payload")
-            clientCallbacks.user3:callServerAsync("1234", "password", "payload")
+            clientCallbacks.user1:callServerAsync("4321", "password", "payload1")
+            clientCallbacks.user2:callServerAsync("1234", "drowssap", "payload2")
+            clientCallbacks.user3:callServerAsync("1234", "password", "payload3")
 
-            expect(drops[clients.user1]).to.equal(1)
+            expect(dropped[clients.user1]).to.equal(1)
             expect(messages[clients.user1]).to.never.be.ok()
 
-            expect(drops[clients.user2]).to.equal(2)
+            expect(dropped[clients.user2]).to.equal(2)
             expect(messages[clients.user2]).to.never.be.ok()
 
-            expect(drops[clients.user3]).to.never.be.ok()
-            expect(messages[clients.user3]).to.equal("payload")
+            expect(dropped[clients.user3]).to.never.be.ok()
+            expect(messages[clients.user3]).to.equal("payload3")
         end)
 
+        it("should handle outbound middleware properly", function()
+            local server = cleaner:give(MockNetwork.Server.new({"user1", "user2", "user3"}))
+            local clients = server:mapClients()
+
+            local dropped = {}
+            local passed = {}
+
+            local function middleware(config)
+                return function(nextMiddleware, _)
+                    return function(player, ...)
+                        if select(config.index, ...) == config.password then
+                            return nextMiddleware(player, ...)
+                        else
+                            config.onDropped(player, ...)
+                        end
+                    end
+                end
+            end
+
+            local serverCallback = cleaner:give(ServerCallback.new(server:createRemoteFunction("remoteFunction"), {
+                outbound = {
+                    middleware({
+                        index = 1,
+                        password = "1234",
+                        onDropped = function(player)
+                            dropped[player] = 1
+                        end,
+                    }),
+                    middleware({
+                        index = 2,
+                        password = "password",
+                        onDropped = function(player)
+                            dropped[player] = 2
+                        end,
+                    })
+                },
+            }))
+
+            for user, clientCallback in server:mapClients(mapClientCallbacks) do
+                clientCallback:setCallback(function()
+                    passed[clients[user]] = true
+                end)
+            end
+
+            serverCallback:callClientAsync(clients.user1, "4321", "password")
+            serverCallback:callClientAsync(clients.user2, "1234", "drowssap")
+            serverCallback:callClientAsync(clients.user3, "1234", "password")
+
+            expect(dropped[clients.user1]).to.equal(1)
+            expect(passed[clients.user1]).to.never.be.ok()
+
+            expect(dropped[clients.user2]).to.equal(2)
+            expect(passed[clients.user2]).to.never.be.ok()
+
+            expect(dropped[clients.user3]).to.never.be.ok()
+            expect(passed[clients.user3]).to.be.ok()
+        end)
     end)
 
     ---
@@ -254,6 +313,51 @@ return function()
             serverCallback:destroy()
 
             expect(serverCallback.destroyed).to.equal(true)
+        end)
+
+        it("should cleanup middleware properly", function()
+            local mockRemoteFunction = cleaner:give(MockNetwork.MockRemoteFunction.new("user"))
+            local destroyed1, destroyed2, destroyed3, destroyed4 = false, false, false, false
+
+            local function middleware(onDestroyed)
+                return function(nextMiddleware, _)
+                    return function(player, ...)
+                        return nextMiddleware(player, ...)
+                    end,
+                    onDestroyed
+                end
+            end
+
+            local serverCallback = ServerCallback.new(mockRemoteFunction , {
+                inbound = {
+                    middleware(function()
+                        destroyed1 = true
+                    end),
+                    middleware(function()
+                        destroyed2 = true
+                    end),
+                },
+                outbound = {
+                    middleware(function()
+                        destroyed3 = true
+                    end),
+                    middleware(function()
+                        destroyed4 = true
+                    end),
+                },
+            })
+
+            expect(destroyed1).to.equal(false)
+            expect(destroyed2).to.equal(false)
+            expect(destroyed3).to.equal(false)
+            expect(destroyed4).to.equal(false)
+
+            serverCallback:destroy()
+
+            expect(destroyed1).to.equal(true)
+            expect(destroyed2).to.equal(true)
+            expect(destroyed3).to.equal(true)
+            expect(destroyed4).to.equal(true)
         end)
 
         it("should reject queued requests from the client with an error", function()
