@@ -82,5 +82,19 @@ return function()
             expect(stringify(value7)).to.equal('{["key"]: 0}')
             expect(stringify(metaData[7])).to.equal('{{["d"]: {{["k"]: part1, ["v"]: 2}}, ["k"]: part1, ["v"]: {["key"]: 1}}, {["d"]: {{["k"]: part1, ["v"]: 3}, {["k"]: part2, ["v"]: 4}}, ["k"]: part2, ["v"]: {}}}')
         end)
+
+        it("should throw if you try to encode cyclic tables", function()
+            local data = {
+                key1 = 1,
+                key2 = 2,
+                [part1] = 3,
+            }
+
+            data.key3 = data
+
+            expect(function()
+                encode(10, true, data)
+            end).to.throw()
+        end)
     end)
 end
