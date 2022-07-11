@@ -205,6 +205,23 @@ return function()
             expect(counts[clients.user1]).to.equal(1)
             expect(counts[clients.user2]).to.equal(5)
         end)
+
+        it("should be able to pass tables with instance keys", function()
+            local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
+
+            local serverSignal = cleaner:give(ServerSignal.new(mockRemoteEvent))
+            local clientSignal = cleaner:give(ClientSignal.new(mockRemoteEvent))
+
+            local part = cleaner:give(Instance.new("Part"))
+            local promise = clientSignal:promise()
+
+            serverSignal:fireClient("user", {
+                [part] = 1,
+            })
+
+            expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
+            expect(promise:expect()[part]).to.equal(1)
+        end)
     end)
 
     describe("ServerSignal:fireClients", function()
@@ -267,6 +284,41 @@ return function()
 
             cleaner:give(clientSignals.user3:connect(function(num)
                 counts[clients.user3] += num
+            end))
+
+            expect(counts[clients.user1]).to.equal(1)
+            expect(counts[clients.user2]).to.equal(3)
+            expect(counts[clients.user3]).to.equal(2)
+        end)
+
+        it("should be able to pass tables with instance keys", function()
+            local server = cleaner:give(MockNetwork.Server.new({"user1", "user2", "user3"}))
+            local clients = server:mapClients()
+            
+            local serverSignal = cleaner:give(ServerSignal.new(server:createRemoteEvent("remoteEvent")))
+            local clientSignals = server:mapClients(mapClientSignals)
+
+            local counts = {
+                [clients.user1] = 0,
+                [clients.user2] = 0,
+                [clients.user3] = 0,
+            }
+
+            local part = cleaner:give(Instance.new("Part"))
+
+            serverSignal:fireClients({clients.user1, clients.user2}, {[part] = 1})
+            serverSignal:fireClients({clients.user2, clients.user3}, {[part] = 2})
+
+            cleaner:give(clientSignals.user1:connect(function(payload)
+                counts[clients.user1] += payload[part]
+            end))
+
+            cleaner:give(clientSignals.user2:connect(function(payload)
+                counts[clients.user2] += payload[part]
+            end))
+
+            cleaner:give(clientSignals.user3:connect(function(payload)
+                counts[clients.user3] += payload[part]
             end))
 
             expect(counts[clients.user1]).to.equal(1)

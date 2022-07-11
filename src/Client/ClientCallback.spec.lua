@@ -266,6 +266,26 @@ return function()
             expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
             expect(promise:expect()).to.equal(true)
         end)
+
+        it("should be able to pass tables with instance keys", function()
+            local mockRemoteFunction = cleaner:give(MockNetwork.MockRemoteFunction.new("user"))
+
+            local serverCallback = cleaner:give(ServerCallback.new(mockRemoteFunction))
+            local clientCallback = cleaner:give(ClientCallback.new(mockRemoteFunction))
+
+            local part = cleaner:give(Instance.new("Part"))
+            
+            serverCallback:setCallback(function(_, payload)
+                return payload[part]
+            end)
+
+            local promise = clientCallback:callServerAsync({
+                [part] = 1,
+            })
+
+            expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
+            expect(promise:expect()).to.equal(1)
+        end)
     end)
 
 

@@ -23,12 +23,12 @@ function ServerSignal.new(remoteEvent, options)
 
     local unboundFireClient = self.fireClient
 
-    local fireClient = function(client, ...)
-        unboundFireClient(self, client, ...)
+    local fireClient = function(...)
+        unboundFireClient(self, ...)
     end
 
-    local onServerEvent = function(client, ...)
-        self._signal:fire(client, NetPass.decode(...))
+    local onServerEvent = function(...)
+        self._signal:fire(...)
     end
     
     if options then
@@ -59,7 +59,9 @@ function ServerSignal.new(remoteEvent, options)
         end
     end
 
-    self._cleaner:give(self._remote.OnServerEvent:Connect(onServerEvent))
+    self._cleaner:give(self._remote.OnServerEvent:Connect(function(client, ...)
+        onServerEvent(client, NetPass.decode(...))
+    end))
     
     return self
 end

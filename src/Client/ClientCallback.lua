@@ -51,8 +51,8 @@ function ClientCallback.new(remoteFunction, options)
         if options.outbound then
             local unboundCallServerAsync = self.callServerAsync
 
-            local callServerAsync = function(client, ...)
-                return unboundCallServerAsync(self, client, ...)
+            local callServerAsync = function(...)
+                return unboundCallServerAsync(self, ...)
             end
 
             for i = #options.outbound, 1, -1 do
@@ -64,8 +64,8 @@ function ClientCallback.new(remoteFunction, options)
                 end
             end
 
-            self.callServerAsync = function(_, client, ...)
-                return callServerAsync(client, ...)
+            self.callServerAsync = function(_, ...)
+                return callServerAsync(...)
             end
         end
     end

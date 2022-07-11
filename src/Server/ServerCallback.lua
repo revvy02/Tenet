@@ -13,7 +13,7 @@ function ServerCallback.new(remoteFunction, options)
     
     self._queue = {}
 
-    local onServerInvoke = function(client, ...)
+    local onServerInvoke = function(...)
         if not self._callback then
             warn("ServerCallback has no callback set, so request is being queued")
 
@@ -22,7 +22,7 @@ function ServerCallback.new(remoteFunction, options)
             assert(coroutine.yield())
         end
 
-        return self._callback(client, ...)
+        return self._callback(...)
     end
 
     if options then
@@ -89,7 +89,7 @@ end
 function ServerCallback:callClientAsync(client, ...)
     return Promise.try(function(...)
         return NetPass.decode(self._remote:InvokeClient(client, NetPass.encode(...)))
-    end, client, ...)
+    end, ...)
 end
 
 function ServerCallback:destroy()

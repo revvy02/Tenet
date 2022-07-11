@@ -173,6 +173,23 @@ return function()
             
             expect(count).to.equal(6)
         end)
+
+        it("should be able to pass tables with instance keys", function()
+            local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
+
+            local serverSignal = cleaner:give(ServerSignal.new(mockRemoteEvent))
+            local clientSignal = cleaner:give(ClientSignal.new(mockRemoteEvent))
+
+            local part = cleaner:give(Instance.new("Part"))
+            local promise = serverSignal:promise()
+
+            clientSignal:fireServer({
+                [part] = 1,
+            })
+
+            expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
+            expect(select(2, promise:expect())[part]).to.equal(1)
+        end)
     end)
 
     describe("ClientSignal:flush", function()
