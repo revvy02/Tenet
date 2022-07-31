@@ -2,35 +2,26 @@ local MockNetwork = require(script.Parent.Parent.Parent.MockNetwork)
 local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
 local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
 
-local ClientStream = require(script.Parent.ClientStream)
-local ServerStream = require(script.Parent.Parent.Server.ServerStream)
+local ClientChannel = require(script.Parent.ClientChannel)
+local ServerChannel = require(script.Parent.Parent.Server.ServerChannel)
 
 return function()
-    local cleaner = Cleaner.new()
-    
-    afterEach(function()
-        cleaner:work()
-    end)
-
-    afterAll(function()
-        cleaner:destroy()
-    end)
-
     describe("StaticStoreClient:getValue", function()
         it("should return a value that changes properly from server changes", function()
-            local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
+            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverStream = cleaner:give(ServerStream.new(mockRemoteEvent))
-            local clientStream = cleaner:give(ClientStream.new(mockRemoteEvent))
+            local serverChannel = ServerChannel.new(mockRemoteEvent, mockRemoteFunction)
+            local clientChannel = ClientChannel.new(mockRemoteEvent, mockRemoteFunction)
 
-            local ssServer = serverStream:create("store", {
+            local ssServer = serverChannel:create("store", {
                 xp = 0,
                 inv = {},
             })
 
-            ssServer:stream("user")
+            ssServer:subscribe("user")
             
-            local ssClient = clientStream:get("store")
+            local ssClient = clientChannel:get("store")
 
             expect(ssClient:getValue("xp")).to.equal(0)
             expect(ssClient:getValue("inv")[1]).to.equal(nil)
@@ -45,19 +36,20 @@ return function()
 
     describe("StaticStoreClient:getChangedSignal", function()
         it("should return a changed signal that is fired properly from server changes", function()
-            local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
+            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverStream = cleaner:give(ServerStream.new(mockRemoteEvent))
-            local clientStream = cleaner:give(ClientStream.new(mockRemoteEvent))
+            local serverChannel = ServerChannel.new(mockRemoteEvent, mockRemoteFunction)
+            local clientChannel = ClientChannel.new(mockRemoteEvent, mockRemoteFunction)
 
-            local ssServer = serverStream:create("store", {
+            local ssServer = serverChannel:create("store", {
                 xp = 0,
                 inv = {},
             })
 
-            ssServer:stream("user")
+            ssServer:subscribe("user")
 
-            local ssClient = clientStream:get("store")
+            local ssClient = clientChannel:get("store")
 
             local xpSignal = ssClient:getChangedSignal("xp")
             local invSignal = ssClient:getChangedSignal("inv")
@@ -87,19 +79,20 @@ return function()
 
     describe("StaticStoreClient:getReducedSignal", function()
         it("should return a reduced signal that is fired properly from server changes", function()
-            local mockRemoteEvent = cleaner:give(MockNetwork.MockRemoteEvent.new("user"))
+            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverStream = cleaner:give(ServerStream.new(mockRemoteEvent))
-            local clientStream = cleaner:give(ClientStream.new(mockRemoteEvent))
+            local serverChannel = ServerChannel.new(mockRemoteEvent, mockRemoteFunction)
+            local clientChannel = ClientChannel.new(mockRemoteEvent, mockRemoteFunction)
 
-            local ssServer = serverStream:create("store", {
+            local ssServer = serverChannel:create("store", {
                 xp = 0,
                 inv = {},
             })
 
-            ssServer:stream("user")
+            ssServer:subscribe("user")
 
-            local ssClient = clientStream:get("store")
+            local ssClient = clientChannel:get("store")
 
             local xpSignal = ssClient:getReducedSignal("xp", "setValue")
             local invSignal = ssClient:getReducedSignal("inv", "insertValue")

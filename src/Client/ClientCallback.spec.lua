@@ -1,33 +1,22 @@
 local MockNetwork = require(script.Parent.Parent.Parent.MockNetwork)
 local Promise = require(script.Parent.Parent.Parent.Promise)
-local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
 
 local ClientCallback = require(script.Parent.ClientCallback)
 local ServerCallback = require(script.Parent.Parent.Server.ServerCallback)
 
 return function()
-    local cleaner = Cleaner.new()
-    
-    afterEach(function()
-        cleaner:work()
-    end)
-
-    afterAll(function()
-        cleaner:destroy()
-    end)
-
     describe("ClientCallback.new", function()
         it("should create a new ClientCallback", function()
-            local mockRemoteFunction = cleaner:give(MockNetwork.MockRemoteFunction.new("user"))
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local clientCallback = cleaner:give(ClientCallback.new(mockRemoteFunction))
+            local clientCallback = ClientCallback.new(mockRemoteFunction)
             
             expect(clientCallback).to.be.a("table")
             expect(getmetatable(clientCallback)).to.equal(ClientCallback)
         end)
 
         it("should handle inbound middleware properly", function()
-            local mockRemoteFunction = cleaner:give(MockNetwork.MockRemoteFunction.new("user"))
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
             local dropped = {0, 0}
             local payloads = {}
@@ -44,9 +33,9 @@ return function()
                 end
             end
 
-            local serverCallback = cleaner:give(ServerCallback.new(mockRemoteFunction))
+            local serverCallback = ServerCallback.new(mockRemoteFunction)
 
-            local clientCallback = cleaner:give(ClientCallback.new(mockRemoteFunction, {
+            local clientCallback = ClientCallback.new(mockRemoteFunction, {
                 inbound = {
                     middleware({
                         index = 1,
@@ -63,7 +52,7 @@ return function()
                         end,
                     })
                 },
-            }))
+            })
 
             clientCallback:setCallback(function(_, _, message)
                 table.insert(payloads, message)
@@ -81,7 +70,7 @@ return function()
         end)
 
         it("should handle outbound middleware properly", function()
-            local mockRemoteFunction = cleaner:give(MockNetwork.MockRemoteFunction.new("user"))
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
             local dropped = {0, 0}
             local payloads = {}
@@ -98,9 +87,9 @@ return function()
                 end
             end
 
-            local serverCallback = cleaner:give(ServerCallback.new(mockRemoteFunction))
+            local serverCallback = ServerCallback.new(mockRemoteFunction)
 
-            local clientCallback = cleaner:give(ClientCallback.new(mockRemoteFunction, {
+            local clientCallback = ClientCallback.new(mockRemoteFunction, {
                 outbound = {
                     middleware({
                         index = 1,
@@ -117,7 +106,7 @@ return function()
                         end,
                     })
                 },
-            }))
+            })
 
             serverCallback:setCallback(function(_, _, _, payload)
                 table.insert(payloads, payload)
@@ -137,10 +126,10 @@ return function()
 
     describe("ClientCallback:setCallback", function()
         it("should resolve any queued requests from the server with the response if the callback doesn't error", function()
-            local mockRemoteFunction = cleaner:give(MockNetwork.MockRemoteFunction.new("user"))
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverCallback = cleaner:give(ServerCallback.new(mockRemoteFunction))
-            local clientCallback = cleaner:give(ClientCallback.new(mockRemoteFunction))
+            local serverCallback = ServerCallback.new(mockRemoteFunction)
+            local clientCallback = ClientCallback.new(mockRemoteFunction)
 
             local count = 0
 
@@ -164,10 +153,10 @@ return function()
         end)
 
         it("should reject any queued requests from the server if the callback errors", function()
-            local mockRemoteFunction = cleaner:give(MockNetwork.MockRemoteFunction.new("user"))
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverCallback = cleaner:give(ServerCallback.new(mockRemoteFunction))
-            local clientCallback = cleaner:give(ClientCallback.new(mockRemoteFunction))
+            local serverCallback = ServerCallback.new(mockRemoteFunction)
+            local clientCallback = ClientCallback.new(mockRemoteFunction)
 
             local promise1 = serverCallback:callClientAsync("user", "z4321")
             expect(promise1:getStatus()).to.equal(Promise.Status.Started)
@@ -189,10 +178,10 @@ return function()
 
     describe("ClientCallback:flush", function()
         it("should reject any queued requests from server", function()
-            local mockRemoteFunction = cleaner:give(MockNetwork.MockRemoteFunction.new("user"))
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverCallback = cleaner:give(ServerCallback.new(mockRemoteFunction))
-            local clientCallback = cleaner:give(ClientCallback.new(mockRemoteFunction))
+            local serverCallback = ServerCallback.new(mockRemoteFunction)
+            local clientCallback = ClientCallback.new(mockRemoteFunction)
 
             local promise1 = serverCallback:callClientAsync("user")
             expect(promise1:getStatus()).to.equal(Promise.Status.Started)
@@ -217,10 +206,10 @@ return function()
 
     describe("ClientCallback:callServerAsync", function()
         it("should return a promise that resolves with the response from the server if it doesn't error", function()
-            local mockRemoteFunction = cleaner:give(MockNetwork.MockRemoteFunction.new("user"))
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverCallback = cleaner:give(ServerCallback.new(mockRemoteFunction))
-            local clientCallback = cleaner:give(ClientCallback.new(mockRemoteFunction))
+            local serverCallback = ServerCallback.new(mockRemoteFunction)
+            local clientCallback = ClientCallback.new(mockRemoteFunction)
 
             serverCallback:setCallback(function()
                 return 1
@@ -234,10 +223,10 @@ return function()
         end)
 
         it("should return a promise that rejects if the server errors", function()
-            local mockRemoteFunction = cleaner:give(MockNetwork.MockRemoteFunction.new("user"))
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverCallback = cleaner:give(ServerCallback.new(mockRemoteFunction))
-            local clientCallback = cleaner:give(ClientCallback.new(mockRemoteFunction))
+            local serverCallback = ServerCallback.new(mockRemoteFunction)
+            local clientCallback = ClientCallback.new(mockRemoteFunction)
 
             serverCallback:setCallback(function()
                 error("Uh oh!")
@@ -250,10 +239,10 @@ return function()
         end)
 
         it("should queue request if the server callback isn't set and resolve once it is", function()
-            local mockRemoteFunction = cleaner:give(MockNetwork.MockRemoteFunction.new("user"))
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverCallback = cleaner:give(ServerCallback.new(mockRemoteFunction))
-            local clientCallback = cleaner:give(ClientCallback.new(mockRemoteFunction))
+            local serverCallback = ServerCallback.new(mockRemoteFunction)
+            local clientCallback = ClientCallback.new(mockRemoteFunction)
 
             local promise = clientCallback:callServerAsync()
 
@@ -268,12 +257,12 @@ return function()
         end)
 
         it("should be able to pass tables with instance keys", function()
-            local mockRemoteFunction = cleaner:give(MockNetwork.MockRemoteFunction.new("user"))
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverCallback = cleaner:give(ServerCallback.new(mockRemoteFunction))
-            local clientCallback = cleaner:give(ClientCallback.new(mockRemoteFunction))
+            local serverCallback = ServerCallback.new(mockRemoteFunction)
+            local clientCallback = ClientCallback.new(mockRemoteFunction)
 
-            local part = cleaner:give(Instance.new("Part"))
+            local part = Instance.new("Part")
             
             serverCallback:setCallback(function(_, payload)
                 return payload[part]
@@ -296,7 +285,7 @@ return function()
 
     describe("ClientCallback:destroy", function()
         it("should set destroyed field to true", function()
-            local mockRemoteFunction = cleaner:give(MockNetwork.MockRemoteFunction.new("user"))
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
             local clientCallback = ClientCallback.new(mockRemoteFunction)
 
@@ -306,7 +295,7 @@ return function()
         end)
         
         it("should cleanup middleware properly", function()
-            local mockRemoteFunction = cleaner:give(MockNetwork.MockRemoteFunction.new("user"))
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
             local destroyed1, destroyed2, destroyed3, destroyed4 = false, false, false, false
 
             local function middleware(onDestroyed)
@@ -351,9 +340,9 @@ return function()
         end)
 
         it("should reject any queued requests from server", function()
-            local mockRemoteFunction = cleaner:give(MockNetwork.MockRemoteFunction.new("user"))
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverCallback = cleaner:give(ServerCallback.new(mockRemoteFunction))
+            local serverCallback = ServerCallback.new(mockRemoteFunction)
             local clientCallback = ClientCallback.new(mockRemoteFunction)
 
             local promise1 = serverCallback:callClientAsync("user")

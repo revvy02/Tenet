@@ -1,79 +1,67 @@
-local Players = game:GetService("Players")
-
 local Slick = require(script.Parent.Parent.Parent.Slick)
 local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
-local Promise = require(script.Parent.Parent.Parent.Promise)
 local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
 
 local StaticStoreServer = {}
 StaticStoreServer.__index = StaticStoreServer
 
-function StaticStoreServer._new(serverStream, owner, initial)
+function StaticStoreServer._new(serverChannel, owner, initial)
     local self = setmetatable({}, StaticStoreServer)
 
     self._owner = owner
-    self._serverStream = serverStream
-    self._module = self._serverStream._module
-    self._serverSignal = self._serverStream._serverSignal
+    self._serverChannel = serverChannel
 
-    self._viewers = {}
+    self._subscribers = {}
 
     self._cleaner = Cleaner.new()
-
-    self._store = self._cleaner:give(Slick.Store.new(initial, self._module and require(self._module)))
+    self._store = self._cleaner:give(Slick.Store.new(initial, self._serverChannel._module and require(self._serverChannel._module)))
 
     self.reduced = self._store.reduced
     self.changed = self._store.changed
+    
+    self.subscribed = self._cleaner:give(TrueSignal.new())
+    self.unsubscribed = self._cleaner:give(TrueSignal.new())
 
     self._cleaner:give(self._store.reduced:connect(function(key, reducer, ...)
-        self._serverSignal:fireClients(self:getViewers(), "dispatch", self._owner, key, reducer, ...)
+        self._serverChannel._serverSignal:fireClients(self:getSubscribers(), "dispatch", self._owner, key, reducer, ...)
     end))
 
-    self._cleaner:give(function()
-        self._serverSignal:fireClients(self:getViewers(), "unstream", self._owner)
-    end)
-
-    self._cleaner:give(Players.PlayerRemoving:Connect(function(player)
-        self:unstream(player)
-    end))
-
-    self._serverStream._cleaner:set(owner, self)
-    self._serverStream.created:fire(owner, self)
+    self._serverChannel._cleaner:set(owner, self)
+    self._serverChannel.created:fire(owner, self)
 
     return self
 end
 
-
-
-function StaticStoreServer:getViewers()
-    return self._viewers
+function StaticStoreServer:getSubscribers()
+    return table.clone(self._subscribers)
 end
 
-function StaticStoreServer:isViewing(player)
-    return table.find(self._viewers, player) ~= nil
+function StaticStoreServer:isSubscribed(player)
+    return table.find(self._subscribers, player) ~= nil
 end
 
 
 
-
-function StaticStoreServer:stream(player)
-    if self:isViewing(player) then
+function StaticStoreServer:subscribe(player)
+    if self:isSubscribed(player) then
         return
     end
 
-    table.insert(self._viewers, player)
+    table.insert(self._subscribers, player)
 
-    self._serverSignal:fireClient(player, "static", self._owner, self._store:getState(), self._serverStream._module)
+    self._serverChannel._serverSignal:fireClient(player, "static", self._owner, self._store:getState(), self._serverChannel._module)
+    self.subscribed:fire(player)
 end
 
-function StaticStoreServer:unstream(player)
-    if not self:isViewing(player) then
+function StaticStoreServer:unsubscribe(player)
+    if not self:isSubscribed(player) then
         return
     end
 
-    table.remove(self._viewers, table.find(self._viewers, player))
+    table.remove(self._subscribers, table.find(self._subscribers, player))
 
-    self._serverSignal:fireClient(player, "unstream", self._owner)
+    self._serverChannel._serverSignal:fireClient(player, "unsubscribe", self._owner)
+    self.unsubscribed:fire(player)
 end
 
 
@@ -99,10 +87,14 @@ end
 
 
 function StaticStoreServer:destroy()
+    for _, player in self:getSubscribers() do
+        self:unsubscribe(player)
+    end
+
+    self._serverChannel.removed:fire(self._owner)
+
     self._cleaner:destroy()
     self.destroyed = true
-
-    self._serverStream.removed:fire(self._owner)
 end
 
 return StaticStoreServer

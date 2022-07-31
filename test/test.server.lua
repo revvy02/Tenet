@@ -9,11 +9,11 @@ require(package.Parent.TestEZ).TestBootstrap:run({
     package.Client["ClientSignal.spec"],
     package.Server["ServerSignal.spec"],
 
-    package.Client["ClientStream.spec"],
-    package.Server["ServerStream.spec"],
+    package.Client["ClientChannel.spec"],
+    package.Server["ServerChannel.spec"],
     
-    --package.Client["StaticStoreClient.spec"],
-    --package.Server["StaticStoreServer.spec"],
+    package.Client["StaticStoreClient.spec"],
+    package.Server["StaticStoreServer.spec"],
     --[[
     package.Client["DynamicStoreClient.spec"],
     package.Server["DynamicStoreServer.spec"],
