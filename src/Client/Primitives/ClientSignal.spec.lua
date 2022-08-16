@@ -1,9 +1,8 @@
-local MockNetwork = require(script.Parent.Parent.Parent.MockNetwork)
-local Promise = require(script.Parent.Parent.Parent.Promise)
-local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
+local MockNetwork = require(script.Parent.Parent.Parent.Parent.MockNetwork)
+local Promise = require(script.Parent.Parent.Parent.Parent.Promise)
 
 local ClientSignal = require(script.Parent.ClientSignal)
-local ServerSignal = require(script.Parent.Parent.Server.ServerSignal)
+local ServerSignal = require(script.Parent.Parent.Parent.Server.Primitives.ServerSignal)
 
 return function()
     describe("ClientSignal.new", function()

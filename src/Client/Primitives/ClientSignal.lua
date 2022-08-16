@@ -1,6 +1,6 @@
-local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
-local NetPass = require(script.Parent.Parent.Parent.NetPass)
-local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
+local Cleaner = require(script.Parent.Parent.Parent.Parent.Cleaner)
+local NetPass = require(script.Parent.Parent.Parent.Parent.NetPass)
+local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
 
 --[=[
     ClientSignal class
@@ -62,7 +62,8 @@ function ClientSignal.new(remoteEvent, options)
     end
 
     self._cleaner:give(self._remote.OnClientEvent:Connect(function(...)
-        onClientEvent(NetPass.decode(...))
+        -- onClientEvent(NetPass.decode(...))
+       onClientEvent(...)
     end))
 
     return self
@@ -74,7 +75,8 @@ end
     @param ... any
 ]=]
 function ClientSignal:fireServer(...)
-    self._remote:FireServer(NetPass.encode(...))
+    -- self._remote:FireServer(NetPass.encode(...))
+    self._remote:FireServer(...)
 end
 
 --[=[

@@ -1,6 +1,6 @@
-local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
-local Promise = require(script.Parent.Parent.Parent.Promise)
-local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
+local Cleaner = require(script.Parent.Parent.Parent.Parent.Cleaner)
+local Promise = require(script.Parent.Parent.Parent.Parent.Promise)
+local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
 
 local ClientSignal = require(script.Parent.ClientSignal)
 local ClientCallback = require(script.Parent.ClientCallback)

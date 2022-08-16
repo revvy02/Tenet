@@ -1,8 +1,8 @@
-local MockNetwork = require(script.Parent.Parent.Parent.MockNetwork)
-local Promise = require(script.Parent.Parent.Parent.Promise)
+local MockNetwork = require(script.Parent.Parent.Parent.Parent.MockNetwork)
+local Promise = require(script.Parent.Parent.Parent.Parent.Promise)
 
 local ClientCallback = require(script.Parent.ClientCallback)
-local ServerCallback = require(script.Parent.Parent.Server.ServerCallback)
+local ServerCallback = require(script.Parent.Parent.Parent.Server.Primitives.ServerCallback)
 
 return function()
     describe("ClientCallback.new", function()

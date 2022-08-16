@@ -1,7 +1,7 @@
-local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
-local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
+local Cleaner = require(script.Parent.Parent.Parent.Parent.Cleaner)
+local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
 
-local Reducers = require(script.Parent.Parent.Parent.Reducers)
+local Reducers = require(script.Parent.Parent.Parent.Shared.Reducers)
 
 local ServerSignal = require(script.Parent.ServerSignal)
 local ServerCallback = require(script.Parent.ServerCallback)

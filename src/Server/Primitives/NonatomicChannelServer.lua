@@ -1,6 +1,6 @@
-local Slick = require(script.Parent.Parent.Parent.Slick)
-local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
-local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
+local Slick = require(script.Parent.Parent.Parent.Parent.Slick)
+local Cleaner = require(script.Parent.Parent.Parent.Parent.Cleaner)
+local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
 
 local NonatomicChannelServer = {}
 NonatomicChannelServer.__index = NonatomicChannelServer

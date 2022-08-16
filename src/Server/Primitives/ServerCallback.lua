@@ -1,6 +1,6 @@
-local Promise = require(script.Parent.Parent.Parent.Promise)
-local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
-local NetPass = require(script.Parent.Parent.Parent.NetPass)
+local Promise = require(script.Parent.Parent.Parent.Parent.Promise)
+local Cleaner = require(script.Parent.Parent.Parent.Parent.Cleaner)
+local NetPass = require(script.Parent.Parent.Parent.Parent.NetPass)
 
 local ServerCallback = {}
 ServerCallback.__index = ServerCallback
@@ -60,7 +60,8 @@ function ServerCallback.new(remoteFunction, options)
     end
     
     self._remote.OnServerInvoke = function(client, ...)
-        return NetPass.encode(onServerInvoke(client, NetPass.decode(...)))
+        -- return NetPass.encode(onServerInvoke(client, NetPass.decode(...)))
+        return onServerInvoke(client, ...) 
     end
 
     return self
@@ -88,7 +89,8 @@ end
 
 function ServerCallback:callClientAsync(client, ...)
     return Promise.try(function(...)
-        return NetPass.decode(self._remote:InvokeClient(client, NetPass.encode(...)))
+        -- return NetPass.decode(self._remote:InvokeClient(client, NetPass.encode(...)))
+        return self._remote:InvokeClient(client, ...)
     end, ...)
 end
 

@@ -1,8 +1,8 @@
-local MockNetwork = require(script.Parent.Parent.Parent.MockNetwork)
-local Promise = require(script.Parent.Parent.Parent.Promise)
-local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
+local MockNetwork = require(script.Parent.Parent.Parent.Parent.MockNetwork)
+local Promise = require(script.Parent.Parent.Parent.Parent.Promise)
+local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
 
-local ClientBroadcast = require(script.Parent.Parent.Client.ClientBroadcast)
+local ClientBroadcast = require(script.Parent.Parent.Parent.Client.Primitives.ClientBroadcast)
 local ServerBroadcast = require(script.Parent.ServerBroadcast)
 
 return function()

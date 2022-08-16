@@ -1,7 +1,7 @@
-local Slick = require(script.Parent.Parent.Parent.Slick)
-local Cleaner = require(script.Parent.Parent.Parent.Cleaner)
-local Promise = require(script.Parent.Parent.Parent.Promise)
-local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
+local Slick = require(script.Parent.Parent.Parent.Parent.Slick)
+local Cleaner = require(script.Parent.Parent.Parent.Parent.Cleaner)
+local Promise = require(script.Parent.Parent.Parent.Parent.Promise)
+local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
 
 --[=[
     NonatomicChannelClient class

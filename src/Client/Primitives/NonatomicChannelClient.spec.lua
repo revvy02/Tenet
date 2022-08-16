@@ -1,9 +1,9 @@
-local MockNetwork = require(script.Parent.Parent.Parent.MockNetwork)
-local Promise = require(script.Parent.Parent.Parent.Promise)
-local TrueSignal = require(script.Parent.Parent.Parent.TrueSignal)
+local MockNetwork = require(script.Parent.Parent.Parent.Parent.MockNetwork)
+local Promise = require(script.Parent.Parent.Parent.Parent.Promise)
+local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
 
 local ClientBroadcast= require(script.Parent.ClientBroadcast)
-local ServerBroadcast = require(script.Parent.Parent.Server.ServerBroadcast)
+local ServerBroadcast = require(script.Parent.Parent.Parent.Server.Primitives.ServerBroadcast)
 
 return function()
     describe("NonatomicChannelClient:getValue", function()

@@ -1,4 +1,4 @@
-local Slick = require(script.Parent.Parent.Parent.Slick)
+local Slick = require(script.Parent.Parent.Parent.Parent.Slick)
 
 local AtomicChannelClient = {}
 AtomicChannelClient.__index = AtomicChannelClient
