@@ -1,5 +1,0 @@
-local Middleware = {
-    
-}
-
-return Middleware

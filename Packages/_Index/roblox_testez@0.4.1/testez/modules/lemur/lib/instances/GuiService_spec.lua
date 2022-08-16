@@ -8,9 +8,9 @@ describe("instances.GuiService", function()
 		assert.not_nil(instance)
 	end)
 
-	describe("BroadcastNotification", function()
+	describe("StreamNotification", function()
 		it("should exist", function()
-			GuiService:new():BroadcastNotification("test", 123)
+			GuiService:new():StreamNotification("test", 123)
 		end)
 	end)
 
