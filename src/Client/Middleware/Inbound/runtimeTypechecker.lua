@@ -4,8 +4,8 @@ local function runtimeTypechecker(typecheck, onFail)
             if typecheck(...) then
                 return nextMiddleware(...)
             else
-                onFail(clientElement, ...)
-                error("[Stellar.Client.Inbound.runtimeTypechecker] Typecheck failed")
+                task.spawn(onFail, clientElement, ...)
+                error("typecheck failed")
             end
         end
     end

@@ -192,23 +192,6 @@ return function()
             expect(counts[clients.user1]).to.equal(1)
             expect(counts[clients.user2]).to.equal(5)
         end)
-
-        it("should be able to pass tables with instance keys", function()
-            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
-
-            local serverSignal = ServerSignal.new(mockRemoteEvent)
-            local clientSignal = ClientSignal.new(mockRemoteEvent)
-
-            local part = Instance.new("Part")
-            local promise = clientSignal:promise()
-
-            serverSignal:fireClient("user", {
-                [part] = 1,
-            })
-
-            expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
-            expect(promise:expect()[part]).to.equal(1)
-        end)
     end)
 
     describe("ServerSignal:fireClients", function()

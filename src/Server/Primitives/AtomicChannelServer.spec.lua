@@ -98,10 +98,11 @@ return function()
         end)
 
         it("should fire the subscribed signal on the server", function()
-            local server = MockNetwork.Server.new({"user1", "user2"})
-            local clients = server:mapClients()
+            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverBroadcast = ServerBroadcast.new(server:createRemoteEvent("remoteEvent"), server:createRemoteFunction("remoteFunction"))
+            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
+            local clientBroadcast = ClientBroadcast.new(mockRemoteEvent, mockRemoteFunction)
 
             local acServer = serverBroadcast:createAtomicChannel("store", {
                 xp = 1000,
@@ -112,10 +113,10 @@ return function()
 
             expect(promise:getStatus()).to.equal(Promise.Status.Started)
 
-            acServer:subscribe(clients.user1)
+            acServer:subscribe("user")
             
             expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
-            expect(select(1, promise:expect())).to.equal(clients.user1)
+            expect(select(1, promise:expect())).to.equal("user")
         end)
     end)
 
@@ -155,6 +156,8 @@ return function()
 
             local promise = clientBroadcast.unsubscribed:promise()
 
+            expect(promise:getStatus()).to.equal(Promise.Status.Started)
+
             acServer:subscribe("user")
             acServer:unsubscribe("user")
             
@@ -163,10 +166,10 @@ return function()
         end)
 
         it("should fire the unsubscribed signal on the server", function()
-            local server = MockNetwork.Server.new({"user1", "user2"})
-            local clients = server:mapClients()
+            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverBroadcast = ServerBroadcast.new(server:createRemoteEvent("remoteEvent"), server:createRemoteFunction("remoteFunction"))
+            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
 
             local acServer = serverBroadcast:createAtomicChannel("store", {
                 xp = 1000,
@@ -177,11 +180,11 @@ return function()
 
             expect(promise:getStatus()).to.equal(Promise.Status.Started)
 
-            acServer:subscribe(clients.user1)
-            acServer:unsubscribe(clients.user1)
+            acServer:subscribe("user")
+            acServer:unsubscribe("user")
 
             expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
-            expect(select(1, promise:expect())).to.equal(clients.user1)
+            expect(select(1, promise:expect())).to.equal("user")
         end)
     end)
 

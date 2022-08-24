@@ -37,7 +37,7 @@ return function()
             end).to.throw()
         end)
 
-        it("should create an atomic channel for the host", function()
+        it("should return an atomic channel with the host", function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
             local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
@@ -49,7 +49,7 @@ return function()
             expect(acServer).to.equal(serverBroadcast:getChannel("store"))
         end)
 
-        it("should fire the created signal with the host and channel", function()
+        it("should fire the created signal on server", function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
             local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
@@ -59,7 +59,7 @@ return function()
 
             expect(promise:getStatus()).to.equal(Promise.Status.Started)
 
-            local acServer = serverBroadcast:createAtomicChannel("store")
+            local acServer = serverBroadcast:createNonatomicChannel("store")
 
             expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
 
@@ -163,19 +163,19 @@ return function()
             end).to.throw()
         end)
 
-        it("should create an atomic channel for the host", function()
+        it("should return an atomic channel with the host", function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
             local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
             local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
 
-            local acServer = serverBroadcast:createNonatomicChannel("store")
+            local ncServer = serverBroadcast:createNonatomicChannel("store")
 
-            expect(acServer).to.be.ok()
-            expect(acServer).to.equal(serverBroadcast:getChannel("store"))
+            expect(ncServer).to.be.ok()
+            expect(ncServer).to.equal(serverBroadcast:getChannel("store"))
         end)
 
-        it("should fire the created signal with the host and channel", function()
+        it("should fire the created signal on server", function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
             local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
@@ -185,12 +185,12 @@ return function()
 
             expect(promise:getStatus()).to.equal(Promise.Status.Started)
 
-            local acServer = serverBroadcast:createNonatomicChannel("store")
+            local ncServer = serverBroadcast:createNonatomicChannel("store")
 
             expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
 
             expect(select(1, promise:expect())).to.equal("store")
-            expect(select(2, promise:expect())).to.equal(acServer)
+            expect(select(2, promise:expect())).to.equal(ncServer)
         end)
 
         it("should work properly if initial state is passed", function()
@@ -199,10 +199,10 @@ return function()
 
             local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
 
-            local acServer = serverBroadcast:createNonatomicChannel("main", {value1 = 2, value2 = 3})
+            local ncServer = serverBroadcast:createNonatomicChannel("main", {value1 = 2, value2 = 3})
 
-            expect(acServer:getValue("value1")).to.equal(2)
-            expect(acServer:getValue("value2")).to.equal(3)
+            expect(ncServer:getValue("value1")).to.equal(2)
+            expect(ncServer:getValue("value2")).to.equal(3)
         end)
 
         it("should use reducers passed in :createAtomicChannel always if they are included", function()
@@ -211,22 +211,22 @@ return function()
 
             local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction, Reducers.Dictionary)
 
-            local acServer = serverBroadcast:createNonatomicChannel("main", {value1 = {}, value2 = 3}, Reducers.Value)
+            local ncServer = serverBroadcast:createNonatomicChannel("main", {value1 = {}, value2 = 3}, Reducers.Value)
 
-            expect(acServer:getValue("value1")).to.be.a("table")
-            expect(acServer:getValue("value2")).to.equal(3)
+            expect(ncServer:getValue("value1")).to.be.a("table")
+            expect(ncServer:getValue("value2")).to.equal(3)
 
             expect(function()
-                acServer:dispatch("value1", "setIndex", "key1", 2)
+                ncServer:dispatch("value1", "setIndex", "key1", 2)
             end).to.throw()
 
             expect(function()
-                acServer:dispatch("value1", "setValue", 3)
-                acServer:dispatch("value2", "setValue", 4)
+                ncServer:dispatch("value1", "setValue", 3)
+                ncServer:dispatch("value2", "setValue", 4)
             end).to.never.throw()
 
-            expect(acServer:getValue("value1")).to.equal(3)
-            expect(acServer:getValue("value2")).to.equal(4)
+            expect(ncServer:getValue("value1")).to.equal(3)
+            expect(ncServer:getValue("value2")).to.equal(4)
         end)
 
         it("should use mixed reducers by default if no reducers are passed in .new or :createAtomicChannel", function()
@@ -235,21 +235,21 @@ return function()
 
             local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
 
-            local acServer = serverBroadcast:createNonatomicChannel("main", {value1 = {}, value2 = {}, value3 = 3})
+            local ncServer = serverBroadcast:createNonatomicChannel("main", {value1 = {}, value2 = {}, value3 = 3})
 
-            expect(#acServer:getValue("value1")).to.equal(0)
-            expect(#acServer:getValue("value2")).to.equal(0)
-            expect(acServer:getValue("value3")).to.equal(3)
+            expect(#ncServer:getValue("value1")).to.equal(0)
+            expect(#ncServer:getValue("value2")).to.equal(0)
+            expect(ncServer:getValue("value3")).to.equal(3)
 
             expect(function()
-                acServer:dispatch("value1", "setIndex", "key1", 2)
-                acServer:dispatch("value2", "insertValue", 1)
-                acServer:dispatch("value3", "setValue", 4)
+                ncServer:dispatch("value1", "setIndex", "key1", 2)
+                ncServer:dispatch("value2", "insertValue", 1)
+                ncServer:dispatch("value3", "setValue", 4)
             end).to.never.throw()
 
-            expect(acServer:getValue("value1").key1).to.equal(2)
-            expect(acServer:getValue("value2")[1]).to.equal(1)
-            expect(acServer:getValue("value3")).to.equal(4)
+            expect(ncServer:getValue("value1").key1).to.equal(2)
+            expect(ncServer:getValue("value2")[1]).to.equal(1)
+            expect(ncServer:getValue("value3")).to.equal(4)
         end)
 
         it("should use the reducers passed in .new if no reducers are passed in :createAtomicChannel", function()
@@ -258,25 +258,25 @@ return function()
 
             local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction, Reducers.Dictionary)
 
-            local acServer = serverBroadcast:createNonatomicChannel("main", {value1 = {}, value2 = 3})
+            local ncServer = serverBroadcast:createNonatomicChannel("main", {value1 = {}, value2 = 3})
 
-            expect(acServer:getValue("value1")).to.be.a("table")
-            expect(acServer:getValue("value2")).to.equal(3)
+            expect(ncServer:getValue("value1")).to.be.a("table")
+            expect(ncServer:getValue("value2")).to.equal(3)
 
             expect(function()
-                acServer:dispatch("value1", "setValue", 2)
+                ncServer:dispatch("value1", "setValue", 2)
             end).to.throw()
 
             expect(function()
-                acServer:dispatch("value1", "setIndex", "key1", 1)
+                ncServer:dispatch("value1", "setIndex", "key1", 1)
             end).to.never.throw()
 
-            expect(acServer:getValue("value1").key1).to.equal(1)
+            expect(ncServer:getValue("value1").key1).to.equal(1)
         end)
     end)
 
     describe("ServerBroadcast:removeChannel", function()
-        it("should fire the removed signal with the host", function()
+        it("should fire the removed signal", function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
             local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 

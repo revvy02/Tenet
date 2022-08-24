@@ -155,43 +155,34 @@ return function()
         end)
 
         it("should fire the subscribed signal on the client", function()
-            local server = MockNetwork.Server.new({"user1", "user2"})
-            local clients = server:mapClients()
+            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverBroadcast = ServerBroadcast.new(server:createRemoteEvent("remoteEvent"), server:createRemoteFunction("remoteFunction"))
-            local clientBroadcasts = server:mapClients(mapClientBroadcasts)
+            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
+            local clientBroadcast = ClientBroadcast.new(mockRemoteEvent, mockRemoteFunction)
 
             local ncServer = serverBroadcast:createNonatomicChannel("store", {
                 xp = 1000,
                 inv = {"gun"},
             })
 
-            local user1Promise = clientBroadcasts.user1.subscribed:promise()
-            local user2Promise = clientBroadcasts.user2.subscribed:promise()
+            local promise = clientBroadcast.subscribed:promise()
 
-            expect(user1Promise:getStatus()).to.equal(Promise.Status.Started)
-            expect(user2Promise:getStatus()).to.equal(Promise.Status.Started)
+            expect(promise:getStatus()).to.equal(Promise.Status.Started)
 
-            ncServer:subscribe(clients.user1)
+            ncServer:subscribe("user")
             
-            expect(user1Promise:getStatus()).to.equal(Promise.Status.Resolved)
-            expect(user2Promise:getStatus()).to.equal(Promise.Status.Started)
-
-            expect(select(1, user1Promise:expect())).to.equal("store")
-
-            ncServer:subscribe(clients.user2)
-
-            expect(user2Promise:getStatus()).to.equal(Promise.Status.Resolved)
-            expect(select(1, user2Promise:expect())).to.equal("store")
+            expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
+            expect(select(1, promise:expect())).to.equal("store")
         end)
 
         it("should fire the subscribed signal on the server", function()
-            local server = MockNetwork.Server.new({"user1", "user2"})
-            local clients = server:mapClients()
+            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverBroadcast = ServerBroadcast.new(server:createRemoteEvent("remoteEvent"), server:createRemoteFunction("remoteFunction"))
+            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
 
-            local ncServer = serverBroadcast:createNonatomicChannel("store", {
+            local ncServer = serverBroadcast:createAtomicChannel("store", {
                 xp = 1000,
                 inv = {"gun"},
             })
@@ -200,10 +191,10 @@ return function()
 
             expect(promise:getStatus()).to.equal(Promise.Status.Started)
 
-            ncServer:subscribe(clients.user1)
+            ncServer:subscribe("user")
             
             expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
-            expect(select(1, promise:expect())).to.equal(clients.user1)
+            expect(select(1, promise:expect())).to.equal("user")
         end)
     end)
 
@@ -230,60 +221,6 @@ return function()
         end)
 
         it("should fire the unsubscribed signal on the client", function()
-            
-        end)
-
-        it("should fire the subscribed signal on the server", function()
-            local server = MockNetwork.Server.new({"user1", "user2"})
-            local clients = server:mapClients()
-
-            local serverBroadcast = ServerBroadcast.new(server:createRemoteEvent("remoteEvent"), server:createRemoteFunction("remoteFunction"))
-
-            local ncServer = serverBroadcast:createNonatomicChannel("store", {
-                xp = 1000,
-                inv = {"gun"},
-            })
-
-            local promise = ncServer.subscribed:promise()
-
-            expect(promise:getStatus()).to.equal(Promise.Status.Started)
-
-            ncServer:subscribe(clients.user1)
-            
-            expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
-            expect(select(1, promise:expect())).to.equal(clients.user1)
-        end)
-    end)
-
-    describe("NonatomicChannelServer:dispatch", function()
-        it("should properly update the server", function()
-            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
-            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
-
-            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
-
-            local acServer = serverBroadcast:createNonatomicChannel("store", {
-                xp = 1000,
-                inv = {"gun"},
-            })
-
-            local changedPromise = acServer.changed:promise()
-            local reducedPromise = acServer.reduced:promise()
-
-            acServer:dispatch("xp", "setValue", 2000)
-
-            expect(acServer:getValue("xp")).to.equal(2000)
-
-            expect(select(1, changedPromise:expect())).to.equal("xp")
-            expect(select(2, changedPromise:expect()).xp).to.equal(2000)
-            expect(select(3, changedPromise:expect()).xp).to.equal(1000)
-
-            expect(select(1, reducedPromise:expect())).to.equal("xp")
-            expect(select(2, reducedPromise:expect())).to.equal("setValue")
-            expect(select(3, reducedPromise:expect())).to.equal(2000)
-        end)
-
-        it("should properly update listening clients that are subscribed", function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
             local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
@@ -295,13 +232,82 @@ return function()
                 inv = {"gun"},
             })
 
+            local promise = clientBroadcast.unsubscribed:promise()
+
+            expect(promise:getStatus()).to.equal(Promise.Status.Started)
+
             ncServer:subscribe("user")
-            ncServer:listen("xp", "user")
+            ncServer:unsubscribe("user")
+            
+            expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
+            expect(promise:expect()).to.equal("store")
+        end)
 
-            local ncClient = clientBroadcast:getChannel("store")
+        it("should fire the unsubscribed signal on the server", function()
+            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local changedPromise = ncClient.changed:promise()
-            local reducedPromise = ncClient.reduced:promise()
+            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
+
+            local ncServer = serverBroadcast:createAtomicChannel("store", {
+                xp = 1000,
+                inv = {"gun"},
+            })
+
+            local promise = ncServer.unsubscribed:promise()
+
+            expect(promise:getStatus()).to.equal(Promise.Status.Started)
+
+            ncServer:subscribe("user")
+            ncServer:unsubscribe("user")
+
+            expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
+            expect(select(1, promise:expect())).to.equal("user")
+        end)
+    end)
+
+    describe("NonatomicChannelServer:stream", function()
+        it("should load the key value on the client if they are subscribed", function()
+
+        end)
+
+        it("should fire the viewed signal on the client", function()
+
+        end)
+
+        it("should fire the viewed signal on the server", function()
+
+        end)
+    end)
+
+    describe("NonatomicChannelServer:unstream", function()
+        it("should unload the key value on the client if they are subscribed", function()
+
+        end)
+
+        it("should fire the viewed signal on the client", function()
+
+        end)
+
+        it("should fire the viewed signal on the server", function()
+
+        end)
+    end)
+
+    describe("NonatomicChannelServer:dispatch", function()
+        it("should properly update the server", function()
+            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
+
+            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
+
+            local ncServer = serverBroadcast:createNonatomicChannel("store", {
+                xp = 1000,
+                inv = {"gun"},
+            })
+
+            local changedPromise = ncServer.changed:promise()
+            local reducedPromise = ncServer.reduced:promise()
 
             ncServer:dispatch("xp", "setValue", 2000)
 
@@ -316,8 +322,46 @@ return function()
             expect(select(3, reducedPromise:expect())).to.equal(2000)
         end)
 
-        it("should not update listening clients that are not subscribed", function()
+        it("should properly update subscribed and listening clients", function()
+            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
+            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
+            local clientBroadcast = ClientBroadcast.new(mockRemoteEvent, mockRemoteFunction)
+
+            local ncServer = serverBroadcast:createNonatomicChannel("store", {
+                xp = 1000,
+                inv = {"gun"},
+            })
+
+            ncServer:subscribe("user")
+            ncServer:stream("xp", "user")
+
+            local ncClient = clientBroadcast:getChannel("store")
+
+            local changedPromise = ncClient.changed:promise()
+            local reducedPromise = ncClient.reduced:promise()
+
+            expect(ncClient:getValue("xp")).to.equal(1000)
+            expect(ncClient:getValue("inv")).to.never.be.ok()
+
+            ncServer:dispatch("xp", "setValue", 2000)
+            ncServer:dispatch("inv", "insertValue", "sword")
+
+            expect(changedPromise:getStatus()).to.equal(Promise.Status.Resolved)
+
+            expect(select(1, changedPromise:expect())).to.equal("xp")
+            expect(select(2, changedPromise:expect()).xp).to.equal(2000)
+            expect(select(3, changedPromise:expect()).xp).to.equal(1000)
+
+            expect(ncClient:getValue("xp")).to.equal(2000)
+            expect(ncClient:getValue("inv")).to.never.be.ok()
+
+            ncServer:stream("inv", "user")
+
+            expect(select(1, reducedPromise:expect())).to.equal("xp")
+            expect(select(2, reducedPromise:expect())).to.equal("setValue")
+            expect(select(3, reducedPromise:expect())).to.equal(2000)
         end)
     end)
 

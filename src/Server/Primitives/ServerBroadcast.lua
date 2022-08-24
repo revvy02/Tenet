@@ -2,6 +2,7 @@ local Cleaner = require(script.Parent.Parent.Parent.Parent.Cleaner)
 local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
 
 local Reducers = require(script.Parent.Parent.Parent.Shared.Reducers)
+local Middleware = require(script.Parent.Parent.Parent.Server.Middleware)
 
 local ServerSignal = require(script.Parent.ServerSignal)
 local ServerCallback = require(script.Parent.ServerCallback)
@@ -19,7 +20,12 @@ function ServerBroadcast.new(remoteEvent, remoteFunction, defaultReducersModule)
     self._cleaner = Cleaner.new()
     self._channelCleaner = Cleaner.new()
 
-    self._serverSignal = self._cleaner:give(ServerSignal.new(remoteEvent))
+    self._serverSignal = self._cleaner:give(ServerSignal.new(remoteEvent, {
+        outboundMiddleware = {
+            Middleware.instanceKeyEncoder(),
+        }
+    }))
+    
     self._serverCallback = self._cleaner:give(ServerCallback.new(remoteFunction))
 
     self._serverCallback:setCallback(function()
@@ -28,7 +34,7 @@ function ServerBroadcast.new(remoteEvent, remoteFunction, defaultReducersModule)
 
     self.created = self._cleaner:give(TrueSignal.new())
     self.removed = self._cleaner:give(TrueSignal.new())
-
+    
     return self
 end
 
