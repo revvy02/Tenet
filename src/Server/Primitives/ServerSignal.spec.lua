@@ -39,7 +39,7 @@ return function()
             end
 
             local serverSignal = ServerSignal.new(server:createRemoteEvent("remoteEvent"), {
-                inbound = {
+                inboundMiddleware = {
                     middleware({
                         index = 1,
                         password = "1234",
@@ -97,7 +97,7 @@ return function()
             end
 
             local serverSignal = ServerSignal.new(server:createRemoteEvent("remoteEvent"), {
-                outbound = {
+                outboundMiddleware = {
                     middleware({
                         index = 1,
                         password = "1234",
@@ -254,41 +254,6 @@ return function()
 
             clientSignals.user3:connect(function(num)
                 counts[clients.user3] += num
-            end)
-
-            expect(counts[clients.user1]).to.equal(1)
-            expect(counts[clients.user2]).to.equal(3)
-            expect(counts[clients.user3]).to.equal(2)
-        end)
-
-        it("should be able to pass tables with instance keys", function()
-            local server = MockNetwork.Server.new({"user1", "user2", "user3"})
-            local clients = server:mapClients()
-            
-            local serverSignal = ServerSignal.new(server:createRemoteEvent("remoteEvent"))
-            local clientSignals = server:mapClients(mapClientSignals)
-
-            local counts = {
-                [clients.user1] = 0,
-                [clients.user2] = 0,
-                [clients.user3] = 0,
-            }
-
-            local part = Instance.new("Part")
-
-            serverSignal:fireClients({clients.user1, clients.user2}, {[part] = 1})
-            serverSignal:fireClients({clients.user2, clients.user3}, {[part] = 2})
-
-            clientSignals.user1:connect(function(payload)
-                counts[clients.user1] += payload[part]
-            end)
-
-            clientSignals.user2:connect(function(payload)
-                counts[clients.user2] += payload[part]
-            end)
-
-            clientSignals.user3:connect(function(payload)
-                counts[clients.user3] += payload[part]
             end)
 
             expect(counts[clients.user1]).to.equal(1)
@@ -453,7 +418,7 @@ return function()
             end
 
             local serverSignal = ServerSignal.new(mockRemoteEvent, {
-                inbound = {
+                inboundMiddleware = {
                     middleware(function()
                         destroyed1 = true
                     end),
@@ -461,7 +426,7 @@ return function()
                         destroyed2 = true
                     end),
                 },
-                outbound = {
+                outboundMiddleware = {
                     middleware(function()
                         destroyed3 = true
                     end),

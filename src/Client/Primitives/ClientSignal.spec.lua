@@ -36,7 +36,7 @@ return function()
             local serverSignal = ServerSignal.new(mockRemoteEvent)
 
             local clientSignal = ClientSignal.new(mockRemoteEvent, {
-                inbound = {
+                inboundMiddleware = {
                     middleware({
                         index = 1,
                         password = "1234",
@@ -90,7 +90,7 @@ return function()
             local serverSignal = ServerSignal.new(mockRemoteEvent)
 
             local clientSignal = ClientSignal.new(mockRemoteEvent, {
-                outbound = {
+                outboundMiddleware = {
                     middleware({
                         index = 1,
                         password = "1234",
@@ -161,23 +161,6 @@ return function()
             end)
             
             expect(count).to.equal(6)
-        end)
-
-        it("should be able to pass tables with instance keys", function()
-            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
-
-            local serverSignal = ServerSignal.new(mockRemoteEvent)
-            local clientSignal = ClientSignal.new(mockRemoteEvent)
-
-            local part = Instance.new("Part")
-            local promise = serverSignal:promise()
-
-            clientSignal:fireServer({
-                [part] = 1,
-            })
-
-            expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
-            expect(select(2, promise:expect())[part]).to.equal(1)
         end)
     end)
 
@@ -344,7 +327,7 @@ return function()
             end
 
             local clientSignal = ClientSignal.new(mockRemoteEvent, {
-                inbound = {
+                inboundMiddleware = {
                     middleware(function()
                         destroyed1 = true
                     end),
@@ -352,7 +335,7 @@ return function()
                         destroyed2 = true
                     end),
                 },
-                outbound = {
+                outboundMiddleware = {
                     middleware(function()
                         destroyed3 = true
                     end),

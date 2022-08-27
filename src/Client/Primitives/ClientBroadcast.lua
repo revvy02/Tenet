@@ -2,6 +2,8 @@ local Cleaner = require(script.Parent.Parent.Parent.Parent.Cleaner)
 local Promise = require(script.Parent.Parent.Parent.Parent.Promise)
 local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
 
+local Middleware = require(script.Parent.Parent.Parent.Client.Middleware)
+
 local ClientSignal = require(script.Parent.ClientSignal)
 local ClientCallback = require(script.Parent.ClientCallback)
 local AtomicChannelClient = require(script.Parent.AtomicChannelClient)
@@ -12,12 +14,12 @@ local handlers = {
         self:getChannel(host):_dispatch(key, reducer, ...)
     end,
 
-    open = function(self, _, host, key, value)
-        self:getChannel(host):_open(key, value)
+    stream = function(self, _, host, key, value)
+        self:getChannel(host):_stream(key, value)
     end,
 
-    close = function(self, _, host, key)
-        self:getChannel(host):_close(key)
+    unstream = function(self, _, host, key)
+        self:getChannel(host):_unstream(key)
     end,
 
     nonatomic = function(self, defaultReducers, host, initial, customReducers)
@@ -41,7 +43,13 @@ function ClientBroadcast.new(remoteEvent, remoteFunction)
     local self = setmetatable({}, ClientBroadcast)
 
     self._cleaner = Cleaner.new()
-    self._clientSignal = self._cleaner:give(ClientSignal.new(remoteEvent))
+
+    self._clientSignal = self._cleaner:give(ClientSignal.new(remoteEvent,{
+        inboundMiddleware = {
+            Middleware.Inbound.instanceKeyDecoder(),
+        }
+    }))
+
     self._clientCallback = self._cleaner:give(ClientCallback.new(remoteFunction))
     
     self._promise = self._clientCallback:callServerAsync()
@@ -66,6 +74,7 @@ function ClientBroadcast.new(remoteEvent, remoteFunction)
 
     self._promise:andThen(function(defaultReducers)
         self._cleaner:give(self._clientSignal:connect(function(action, host, ...)
+            print(action)
             handlers[action](self, defaultReducers, host, ...)
         end))
     end)

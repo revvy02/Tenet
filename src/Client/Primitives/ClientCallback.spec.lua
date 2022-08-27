@@ -36,7 +36,7 @@ return function()
             local serverCallback = ServerCallback.new(mockRemoteFunction)
 
             local clientCallback = ClientCallback.new(mockRemoteFunction, {
-                inbound = {
+                inboundMiddleware = {
                     middleware({
                         index = 1,
                         password = "1234",
@@ -90,7 +90,7 @@ return function()
             local serverCallback = ServerCallback.new(mockRemoteFunction)
 
             local clientCallback = ClientCallback.new(mockRemoteFunction, {
-                outbound = {
+                outboundMiddleware = {
                     middleware({
                         index = 1,
                         password = "1234",
@@ -255,26 +255,6 @@ return function()
             expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
             expect(promise:expect()).to.equal(true)
         end)
-
-        it("should be able to pass tables with instance keys", function()
-            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
-
-            local serverCallback = ServerCallback.new(mockRemoteFunction)
-            local clientCallback = ClientCallback.new(mockRemoteFunction)
-
-            local part = Instance.new("Part")
-            
-            serverCallback:setCallback(function(_, payload)
-                return payload[part]
-            end)
-
-            local promise = clientCallback:callServerAsync({
-                [part] = 1,
-            })
-
-            expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
-            expect(promise:expect()).to.equal(1)
-        end)
     end)
 
 
@@ -308,7 +288,7 @@ return function()
             end
 
             local clientCallback = ClientCallback.new(mockRemoteFunction , {
-                inbound = {
+                inboundMiddleware = {
                     middleware(function()
                         destroyed1 = true
                     end),
@@ -316,7 +296,7 @@ return function()
                         destroyed2 = true
                     end),
                 },
-                outbound = {
+                outboundMiddleware = {
                     middleware(function()
                         destroyed3 = true
                     end),

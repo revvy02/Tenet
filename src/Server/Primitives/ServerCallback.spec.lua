@@ -40,7 +40,7 @@ return function()
             end
 
             local serverCallback = ServerCallback.new(server:createRemoteFunction("remoteFunction"), {
-                inbound = {
+                inboundMiddleware = {
                     middleware({
                         index = 1,
                         password = "1234",
@@ -98,7 +98,7 @@ return function()
             end
 
             local serverCallback = ServerCallback.new(server:createRemoteFunction("remoteFunction"), {
-                outbound = {
+                outboundMiddleware = {
                     middleware({
                         index = 1,
                         password = "1234",
@@ -309,7 +309,7 @@ return function()
             end
 
             local serverCallback = ServerCallback.new(mockRemoteFunction , {
-                inbound = {
+                inboundMiddleware = {
                     middleware(function()
                         destroyed1 = true
                     end),
@@ -317,7 +317,7 @@ return function()
                         destroyed2 = true
                     end),
                 },
-                outbound = {
+                outboundMiddleware = {
                     middleware(function()
                         destroyed3 = true
                     end),

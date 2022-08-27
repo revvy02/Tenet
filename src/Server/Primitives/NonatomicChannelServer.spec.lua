@@ -268,7 +268,7 @@ return function()
 
     describe("NonatomicChannelServer:stream", function()
         it("should load the key value on the client if they are subscribed", function()
-
+            
         end)
 
         it("should fire the viewed signal on the client", function()
