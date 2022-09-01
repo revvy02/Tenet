@@ -10,13 +10,6 @@ local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
 local ClientSignal = {}
 ClientSignal.__index = ClientSignal
 
---[=[
-    Constructs a new ClientSignal object
-
-    @param remoteEvent RemoteEvent
-    @param options Options
-    @return ClientSignal
-]=]
 function ClientSignal.new(remoteEvent, options)
     local self = setmetatable({}, ClientSignal)
 
@@ -87,16 +80,16 @@ function ClientSignal:fireServer(...)
 end
 
 --[=[
-    Flushes any pending requests
+    Flushes any unprocessed requests
 ]=]
 function ClientSignal:flush()
     self._signal:flush()
 end
 
 --[=[
-    Connects a handler function to process incoming requests
-    
-    @param fn (...any) -> (...any)
+    Connects a handler function to process incoming data
+
+    @param fn function
     @return Connection
 ]=]
 function ClientSignal:connect(fn)
@@ -104,18 +97,18 @@ function ClientSignal:connect(fn)
 end
 
 --[=[
-    Returns a promise that resolves when the signal is fired
+    Returns a promise that resolves when the signal is fired next
 ]=]
 function ClientSignal:promise()
     return self._signal:promise()
 end
 
 --[=[
-    Flushes any pending requests and prepares the ClientSignal object for garbage collection
+    Prepares ClientSignal instance for garbage collection
 ]=]
 function ClientSignal:destroy()
-    self:flush()
     self._cleaner:destroy()
+    self.destroyed = true
 end
 
 return ClientSignal

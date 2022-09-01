@@ -36,28 +36,15 @@ local handlers = {
     end,
 }
 
---[=[
-    Server Network class for selectively receiving state
-
-    @class ClientBroadcast
-]=]
 local ClientBroadcast = {}
 ClientBroadcast.__index = ClientBroadcast
 
---[=[
-    Constructs a new ClientBroadcast object
-
-    @param remoteEvent RemoteEvent
-    @param remoteFunction RemoteFunction
-    @param defaultReducersModule ModuleScript?
-    @return ClientBroadcast
-]=]
 function ClientBroadcast.new(remoteEvent, remoteFunction)
     local self = setmetatable({}, ClientBroadcast)
 
     self._cleaner = Cleaner.new()
 
-    self._clientSignal = self._cleaner:give(ClientSignal.new(remoteEvent, {
+    self._clientSignal = self._cleaner:give(ClientSignal.new(remoteEvent,{
         inboundMiddleware = {
             Middleware.Inbound.instanceKeyDecoder(),
         }
@@ -87,6 +74,7 @@ function ClientBroadcast.new(remoteEvent, remoteFunction)
 
     self._promise:andThen(function(defaultReducers)
         self._cleaner:give(self._clientSignal:connect(function(action, host, ...)
+            print(action)
             handlers[action](self, defaultReducers, host, ...)
         end))
     end)
@@ -94,19 +82,10 @@ function ClientBroadcast.new(remoteEvent, remoteFunction)
     return self
 end
 
---[=[
-    Returns the channel with the passed host
-
-    @param host any
-    @return AtomicChannelClient | NonatomicChannelClient
-]=]
 function ClientBroadcast:getChannel(host)
     return self._cleaner:get(host)
 end
 
---[=[
-    Removes any channels and prepares the ClientBroadcast object for garbage collection
-]=]
 function ClientBroadcast:destroy()
     self._promise:cancel()
     self._cleaner:destroy()

@@ -138,7 +138,7 @@ return function()
             expect(acServer:getValue("value2")).to.equal(3)
 
             expect(function()
-                acServer:dispatch("value1", "insertValue", 2)
+                acServer:dispatch("value1", "setValue", 2)
             end).to.throw()
 
             expect(function()
@@ -264,7 +264,7 @@ return function()
             expect(ncServer:getValue("value2")).to.equal(3)
 
             expect(function()
-                ncServer:dispatch("value1", "insertValue", 2)
+                ncServer:dispatch("value1", "setValue", 2)
             end).to.throw()
 
             expect(function()

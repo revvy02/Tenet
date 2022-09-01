@@ -14,8 +14,7 @@ require(package.Parent.TestEZ).TestBootstrap:run({
     
     package.Client.Primitives["AtomicChannelClient.spec"],
     package.Server.Primitives["AtomicChannelServer.spec"],
-    --[[
-    package.Client["NonatomicChannelClient.spec"],
-    package.Server["DynamicStoreServer.spec"],
-     --]]
+    
+    package.Client.Primitives["NonatomicChannelClient.spec"],
+    package.Server.Primitives["NonatomicChannelServer.spec"],
 })

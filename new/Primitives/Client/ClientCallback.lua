@@ -11,10 +11,9 @@ local ClientCallback = {}
 ClientCallback.__index = ClientCallback
 
 --[=[
-    Constructs a new ClientCallback object
+    Creates a new ClientCallback
 
-    @param remoteFunction RemoteFunction
-    @param options Options
+    @param remotes table
     @return ClientCallback
 ]=]
 function ClientCallback.new(remoteFunction, options)
@@ -82,7 +81,7 @@ end
 --[=[
     Sets the client handler callback
 
-    @param callback (...any) -> (...any)
+    @param callback function
 ]=]
 function ClientCallback:setCallback(callback)
     self._callback = callback
@@ -97,7 +96,7 @@ function ClientCallback:setCallback(callback)
 end
 
 --[=[
-    Flushes any pending requests
+    Flushes any pending requests on the client
 ]=]
 function ClientCallback:flush()
     for _, thread in pairs(self._queue) do
@@ -121,11 +120,12 @@ function ClientCallback:callServerAsync(...)
 end
 
 --[=[
-    Flushes any requests and prepares the ClientCallback object for garbage collection
+    Prepares the ClientCallback instance for garbage collection
 ]=]
 function ClientCallback:destroy()
     self:flush()
     self._cleaner:destroy()
+    self.destroyed = true
 end
 
 return ClientCallback

@@ -321,116 +321,21 @@ return function()
         end)
 
         it("should fire the streamed signal on the server", function()
-            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
-            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
-
-            local ncServer = serverBroadcast:createNonatomicChannel("store", {
-                xp = 1000,
-                inv = {"gun"},
-            })
-
-            local promise = ncServer.streamed:promise()
-
-            expect(promise:getStatus()).to.equal(Promise.Status.Started)
-
-            ncServer:stream("xp", "user")
-
-            expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
-
-            expect(select(1, promise:expect())).to.equal("xp")
-            expect(select(2, promise:expect())).to.equal("user")
         end)
     end)
 
     describe("NonatomicChannelServer:unstream", function()
         it("should unload the key value on the client if they are subscribed", function()
-            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
-            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
-            local clientBroadcast = ClientBroadcast.new(mockRemoteEvent, mockRemoteFunction)
-
-            local ncServer = serverBroadcast:createNonatomicChannel("store", {
-                xp = 1000,
-                inv = {"gun"},
-            })
-
-            ncServer:subscribe("user")
-
-            local ncClient = clientBroadcast:getChannel("store")
-
-            expect(ncClient:getValue("xp")).to.never.be.ok()
-            expect(ncClient:getValue("inv")).to.never.be.ok()
-
-            ncServer:stream("xp", "user")
-
-            expect(ncClient:getValue("xp")).to.equal(1000)
-            expect(ncClient:getValue("inv")).to.never.be.ok()
-
-            ncServer:unstream("xp", "user")
-
-            expect(ncClient:getValue("xp")).to.never.be.ok()
-            expect(ncClient:getValue("inv")).to.never.be.ok()
         end)
 
         it("should fire the unstreamed signal on the client", function()
-            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
-            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
-            local clientBroadcast = ClientBroadcast.new(mockRemoteEvent, mockRemoteFunction)
-
-            local ncServer = serverBroadcast:createNonatomicChannel("store", {
-                xp = 1000,
-                inv = {"gun"},
-            })
-
-            ncServer:subscribe("user")
-
-            local ncClient = clientBroadcast:getChannel("store")
-
-            local promise = ncClient.unstreamed:promise()
-
-            expect(promise:getStatus()).to.equal(Promise.Status.Started)
-
-            ncServer:stream("xp", "user")
-            
-            expect(promise:getStatus()).to.equal(Promise.Status.Started)
-
-            ncServer:unstream("xp", "user")
-
-            expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
-
-            expect(select(1, promise:expect())).to.equal("xp")
         end)
 
         it("should fire the unstreamed signal on the server", function()
-            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
-            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
-
-            local ncServer = serverBroadcast:createNonatomicChannel("store", {
-                xp = 1000,
-                inv = {"gun"},
-            })
-
-            local promise = ncServer.unstreamed:promise()
-
-            expect(promise:getStatus()).to.equal(Promise.Status.Started)
-
-            ncServer:stream("xp", "user")
-            
-            expect(promise:getStatus()).to.equal(Promise.Status.Started)
-
-            ncServer:unstream("xp", "user")
-
-            expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
-
-            expect(select(1, promise:expect())).to.equal("xp")
-            expect(select(2, promise:expect())).to.equal("user")
         end)
     end)
 

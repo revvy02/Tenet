@@ -2,41 +2,9 @@ local Slick = require(script.Parent.Parent.Parent.Parent.Slick)
 local Cleaner = require(script.Parent.Parent.Parent.Parent.Cleaner)
 local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
 
---[=[
-    Channel class for replicating state atomically to clients
-
-    @class NonatomicChannelServer
-]=]
 local AtomicChannelServer = {}
 AtomicChannelServer.__index = AtomicChannelServer
 
---[=[
-    Unsubscribes all players and prepares the channel for garbage collection
-    
-    @private
-]=]
-function AtomicChannelServer:_destroy()
-    for _, player in self:getSubscribers() do
-        self:unsubscribe(player)
-    end
-
-    self._serverBroadcast.removed:fire(self._host)
-
-    self._cleaner:destroy()
-    self.destroyed = true
-end
-
---[=[
-    Constructs a new AtomicChannelServer
-
-    @param serverBroadcast ServerBroadcast
-    @param host any
-    @param initialState table?
-    @param reducersModule ModuleScript?
-    @return AtomicChannelServer
-
-    @private
-]=]
 function AtomicChannelServer._new(serverBroadcast, host, initialState, reducersModule)
     assert(serverBroadcast._channelCleaner:get(host) == nil, string.format("Cannot create more than one channel for host (%s)", tostring(host)))
 
@@ -53,40 +21,10 @@ function AtomicChannelServer._new(serverBroadcast, host, initialState, reducersM
 
     self._store = self._cleaner:give(Slick.Store.new(initialState and table.clone(initialState), require(self._reducersModule)))
 
-    --[=[
-        Signal that gets fired once key in store is reduced
-
-        @prop reduced TrueSignal
-        @readonly
-        @within NonatomicChannelServer
-    ]=]
     self.reduced = self._store.reduced
-
-    --[=[
-        Signal that gets fired once key in store is changed
-
-        @prop changed TrueSignal
-        @readonly
-        @within NonatomicChannelServer
-    ]=]
     self.changed = self._store.changed
     
-    --[=[
-        Signal that gets fired once a player is subscribed to a channel
-
-        @prop subscribed TrueSignal
-        @readonly
-        @within NonatomicChannelServer
-    ]=]
     self.subscribed = self._cleaner:give(TrueSignal.new())
-
-    --[=[
-        Signal that gets fired once a player is unsubscribed to a channel
-
-        @prop unsubscribed TrueSignal
-        @readonly
-        @within NonatomicChannelServer
-    ]=]
     self.unsubscribed = self._cleaner:give(TrueSignal.new())
 
     self._cleaner:give(self._store.reduced:connect(function(key, reducer, ...)
@@ -99,30 +37,16 @@ function AtomicChannelServer._new(serverBroadcast, host, initialState, reducersM
     return self
 end
 
---[=[
-    Returns a list of players subscribed to the channel
-
-    @return {...Players}
-]=]
 function AtomicChannelServer:getSubscribers()
     return table.clone(self._subscribers)
 end
 
---[=[
-    Returns whether or not the passed player is subscribed to the channel
-
-    @param player Player
-    @return boolean
-]=]
 function AtomicChannelServer:isSubscribed(player)
     return table.find(self._subscribers, player) ~= nil
 end
 
---[=[
-    Subscribes the player to the channel
 
-    @param player Player
-]=]
+
 function AtomicChannelServer:subscribe(player)
     if self:isSubscribed(player) then
         return
@@ -134,11 +58,6 @@ function AtomicChannelServer:subscribe(player)
     self.subscribed:fire(player)
 end
 
---[=[
-    Unsubscribes the player to the channel
-
-    @param player Player
-]=]
 function AtomicChannelServer:unsubscribe(player)
     if not self:isSubscribed(player) then
         return
@@ -150,46 +69,37 @@ function AtomicChannelServer:unsubscribe(player)
     self.unsubscribed:fire(player)
 end
 
---[=[
-    Dispatches a reducer on the key
 
-    @param key any
-    @param reducer string
-    @param ... any
-]=]
+
+
 function AtomicChannelServer:dispatch(key, reducer, ...)
     self._store:dispatch(key, reducer, ...)
 end
 
---[=[
-    Gets the value of the key
-
-    @param key any
-    @return any
-]=]
 function AtomicChannelServer:getValue(key)
     return self._store:getValue(key)
 end
 
---[=[
-    Gets a signal that will fire when the value of the key changes
-
-    @param key any
-    @return TrueSignal
-]=]
 function AtomicChannelServer:getChangedSignal(key)
     return self._store:getChangedSignal(key)
 end
 
---[=[
-    Gets a signal that will fire when the value of the key is reduced
-
-    @param key any
-    @param reducer string
-    @return TrueSignal
-]=]
 function AtomicChannelServer:getReducedSignal(key, reducer)
     return self._store:getReducedSignal(key, reducer)
+end
+
+
+
+
+function AtomicChannelServer:_destroy()
+    for _, player in self:getSubscribers() do
+        self:unsubscribe(player)
+    end
+
+    self._serverBroadcast.removed:fire(self._host)
+
+    self._cleaner:destroy()
+    self.destroyed = true
 end
 
 return AtomicChannelServer

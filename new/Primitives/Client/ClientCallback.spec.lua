@@ -263,7 +263,17 @@ return function()
 
 
 
-    describe("ClientCallback:destroy", function()  
+    describe("ClientCallback:destroy", function()
+        it("should set destroyed field to true", function()
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
+
+            local clientCallback = ClientCallback.new(mockRemoteFunction)
+
+            clientCallback:destroy()
+
+            expect(clientCallback.destroyed).to.equal(true)
+        end)
+        
         it("should cleanup middleware properly", function()
             local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
             local destroyed1, destroyed2, destroyed3, destroyed4 = false, false, false, false

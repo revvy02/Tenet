@@ -1,5 +1,3 @@
-local Value = require(script.Parent.Value)
-
 local List = {
     insertValue = function(old, value, index)
         local new = table.clone(old)
@@ -34,8 +32,6 @@ local List = {
 
         return old
     end,
-
-    setValue = Value.setValue,
 }
 
 return List

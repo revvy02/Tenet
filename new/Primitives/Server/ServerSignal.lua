@@ -2,21 +2,9 @@ local Cleaner = require(script.Parent.Parent.Parent.Parent.Cleaner)
 local NetPass = require(script.Parent.Parent.Parent.Parent.NetPass)
 local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
 
---[=[
-    Stellar equivalent for RemoteEvent
-
-    @class ServerSignaL
-]=]
 local ServerSignal = {}
 ServerSignal.__index = ServerSignal
 
---[=[
-    Constructs a new ServerSignal object
-
-    @param remoteEvent RemoteEvent
-    @param options Options
-    @return ServerSignal
-]=]
 function ServerSignal.new(remoteEvent, options)
     local self = setmetatable({}, ServerSignal)
 
@@ -71,56 +59,30 @@ function ServerSignal.new(remoteEvent, options)
     return self
 end
 
---[=[
-    Fires the client with the passed args
-
-    @param client Player
-]=]
 function ServerSignal:fireClient(client, ...)
     -- self._remote:FireClient(client, NetPass.encode(...))
     self._remote:FireClient(client, ...)
 end
 
---[=[
-    Fires the each client in the passed client list with the passed args
-
-    @param clients {...Player}
-]=]
 function ServerSignal:fireClients(clients, ...)
     for _, client in pairs(clients) do
         self:fireClient(client, ...)
     end
 end
 
---[=[
-    Flushes any pending requests
-]=]
 function ServerSignal:flush()
     self._signal:flush()
 end
 
---[=[
-    Connects a handler function to the ServerSignal object to process any incoming requests
-
-    @param fn (Player, ...any) -> (...any)
-    @return Connection
-]=]
 function ServerSignal:connect(fn)
     return self._signal:connect(fn)
 end
 
---[=[
-    Returns a promise that resolves when the ServerSignal object is fired
-]=]
 function ServerSignal:promise()
     return self._signal:promise()
 end
 
---[=[
-    Flushes any pending requests and prepares the ServerSignal object for garbage collection
-]=]
 function ServerSignal:destroy()
-    self:flush()
     self._cleaner:destroy()
 end
 

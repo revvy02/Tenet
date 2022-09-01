@@ -5,7 +5,7 @@ local ClientBroadcast = require(script.Parent.ClientBroadcast)
 local ServerBroadcast = require(script.Parent.Parent.Parent.Server.Primitives.ServerBroadcast)
 
 return function()
-    describe("NonatomicChannelClient:getValue", function()
+    describe("AtomicChannelClient:getValue", function()
         it("should return a value that changes properly from server changes", function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
             local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
@@ -13,30 +13,27 @@ return function()
             local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
             local clientBroadcast = ClientBroadcast.new(mockRemoteEvent, mockRemoteFunction)
 
-            local ncServer = serverBroadcast:createNonatomicChannel("store", {
+            local acServer = serverBroadcast:createAtomicChannel("store", {
                 xp = 0,
                 inv = {},
             })
 
-            ncServer:subscribe("user")
+            acServer:subscribe("user")
             
-            ncServer:stream("xp", "user")
-            ncServer:stream("inv", "user")
+            local acClient = clientBroadcast:getChannel("store")
 
-            local ncClient = clientBroadcast:getChannel("store")
+            expect(acClient:getValue("xp")).to.equal(0)
+            expect(acClient:getValue("inv")[1]).to.equal(nil)
 
-            expect(ncClient:getValue("xp")).to.equal(0)
-            expect(ncClient:getValue("inv")[1]).to.equal(nil)
+            acServer:dispatch("xp", "setValue", 1000)
+            acServer:dispatch("inv", "insertValue", "gun")
 
-            ncServer:dispatch("xp", "setValue", 1000)
-            ncServer:dispatch("inv", "insertValue", "gun")
-
-            expect(ncClient:getValue("xp")).to.equal(1000)
-            expect(ncClient:getValue("inv")[1]).to.equal("gun")
+            expect(acClient:getValue("xp")).to.equal(1000)
+            expect(acClient:getValue("inv")[1]).to.equal("gun")
         end)
     end)
 
-    describe("NonatomicChannelClient:getChangedSignal", function()
+    describe("AtomicChannelClient:getChangedSignal", function()
         it("should return a changed signal that is fired properly from server changes", function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
             local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
@@ -44,20 +41,17 @@ return function()
             local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
             local clientBroadcast = ClientBroadcast.new(mockRemoteEvent, mockRemoteFunction)
 
-            local ncServer = serverBroadcast:createNonatomicChannel("store", {
+            local ssServer = serverBroadcast:createAtomicChannel("store", {
                 xp = 0,
                 inv = {},
             })
 
-            ncServer:subscribe("user")
+            ssServer:subscribe("user")
 
-            ncServer:stream("xp", "user")
-            ncServer:stream("inv", "user")
+            local ssClient = clientBroadcast:getChannel("store")
 
-            local ncClient = clientBroadcast:getChannel("store")
-
-            local xpSignal = ncClient:getChangedSignal("xp")
-            local invSignal = ncClient:getChangedSignal("inv")
+            local xpSignal = ssClient:getChangedSignal("xp")
+            local invSignal = ssClient:getChangedSignal("inv")
 
             expect(xpSignal).to.be.a("table")
             expect(getmetatable(xpSignal)).to.equal(TrueSignal)
@@ -65,14 +59,14 @@ return function()
             expect(invSignal).to.be.a("table")
             expect(getmetatable(invSignal)).to.equal(TrueSignal)
 
-            expect(ncClient:getValue("xp")).to.equal(0)
-            expect(ncClient:getValue("inv")[1]).to.equal(nil)
+            expect(ssClient:getValue("xp")).to.equal(0)
+            expect(ssClient:getValue("inv")[1]).to.equal(nil)
 
             local xpPromise = xpSignal:promise()
             local invPromise = invSignal:promise()
 
-            ncServer:dispatch("xp", "setValue", 1000)
-            ncServer:dispatch("inv", "insertValue", "gun")
+            ssServer:dispatch("xp", "setValue", 1000)
+            ssServer:dispatch("inv", "insertValue", "gun")
 
             expect(select(1, xpPromise:expect())).to.equal(1000)
             expect(select(2, xpPromise:expect())).to.equal(0)
@@ -82,7 +76,7 @@ return function()
         end)
     end)
 
-    describe("NonatomicChannelClient:getReducedSignal", function()
+    describe("AtomicChannelClient:getReducedSignal", function()
         it("should return a reduced signal that is fired properly from server changes", function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
             local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
@@ -90,20 +84,17 @@ return function()
             local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
             local clientBroadcast = ClientBroadcast.new(mockRemoteEvent, mockRemoteFunction)
 
-            local ncServer = serverBroadcast:createNonatomicChannel("store", {
+            local ssServer = serverBroadcast:createAtomicChannel("store", {
                 xp = 0,
                 inv = {},
             })
 
-            ncServer:subscribe("user")
+            ssServer:subscribe("user")
 
-            ncServer:stream("xp", "user")
-            ncServer:stream("inv", "user")
-            
-            local ncClient = clientBroadcast:getChannel("store")
+            local ssClient = clientBroadcast:getChannel("store")
 
-            local xpSignal = ncClient:getReducedSignal("xp", "setValue")
-            local invSignal = ncClient:getReducedSignal("inv", "insertValue")
+            local xpSignal = ssClient:getReducedSignal("xp", "setValue")
+            local invSignal = ssClient:getReducedSignal("inv", "insertValue")
 
             expect(xpSignal).to.be.a("table")
             expect(getmetatable(xpSignal)).to.equal(TrueSignal)
@@ -111,14 +102,14 @@ return function()
             expect(invSignal).to.be.a("table")
             expect(getmetatable(invSignal)).to.equal(TrueSignal)
 
-            expect(ncClient:getValue("xp")).to.equal(0)
-            expect(ncClient:getValue("inv")[1]).to.equal(nil)
+            expect(ssClient:getValue("xp")).to.equal(0)
+            expect(ssClient:getValue("inv")[1]).to.equal(nil)
 
             local xpPromise = xpSignal:promise()
             local invPromise = invSignal:promise()
 
-            ncServer:dispatch("xp", "setValue", 1000)
-            ncServer:dispatch("inv", "insertValue", "gun")
+            ssServer:dispatch("xp", "setValue", 1000)
+            ssServer:dispatch("inv", "insertValue", "gun")
 
             expect(xpPromise:expect()).to.equal(1000)
             expect(invPromise:expect()).to.equal("gun")

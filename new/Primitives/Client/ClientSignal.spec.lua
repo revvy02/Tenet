@@ -303,6 +303,16 @@ return function()
     end)
 
     describe("ClientSignal:destroy", function()
+        it("should set destroyed field to true", function()
+            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new()
+
+            local clientSignal = ClientSignal.new(mockRemoteEvent)
+
+            clientSignal:destroy()
+
+            expect(clientSignal.destroyed).to.equal(true)
+        end)
+        
         it("should cleanup middleware", function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
             local destroyed1, destroyed2, destroyed3, destroyed4 = false, false, false, false

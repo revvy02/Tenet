@@ -14,8 +14,7 @@ NonatomicChannelClient.__index = NonatomicChannelClient
 --[=[
     Creates a new NonatomicChannelClient
 
-    @param initial table
-    @param reducers {[string]: () -> ()}
+    @param reducers table
     @return NonatomicChannelClient
 
     @private
@@ -55,8 +54,6 @@ end
 
     @param key any
     @param value any
-
-    @private
 ]=]
 function NonatomicChannelClient:_stream(key, value)
     self._store:dispatch(key, "setValue", value)
@@ -68,8 +65,6 @@ end
     Used to unload the key
 
     @param key any
-
-    @private
 ]=]
 function NonatomicChannelClient:_unstream(key)
     self._store:dispatch(key, "setValue", nil)
@@ -87,7 +82,7 @@ function NonatomicChannelClient:_destroy()
 end
 
 --[=[
-    Gets the key value from store
+    Gets key value from store
 
     @key any
     @return any
@@ -97,20 +92,20 @@ function NonatomicChannelClient:getValue(key)
 end
 
 --[=[
-    Gets the signal that's fired when the key changes
+    Gets key changed signal
 
     @key any
-    @return TrueSignal
+    @return Signal
 ]=]
 function NonatomicChannelClient:getChangedSignal(key)
     return self._store:getChangedSignal(key)
 end
 
 --[=[
-    Gets the signal that's fired when the key changes
+    Gets key reduced signal
 
     @key any
-    @return TrueSignal
+    @return Signal
 ]=]
 function NonatomicChannelClient:getReducedSignal(key, reducer)
     return self._store:getReducedSignal(key, reducer)
