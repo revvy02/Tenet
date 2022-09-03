@@ -25,21 +25,24 @@ ServerBroadcast.__index = ServerBroadcast
     @param defaultReducersModule ModuleScript?
     @return ServerBroadcast
 ]=]
-function ServerBroadcast.new(remoteEvent, remoteFunction, defaultReducersModule)
+function ServerBroadcast.new(remoteEvent, remoteFunction, options)
     local self = setmetatable({}, ServerBroadcast)
 
-    self._defaultReducersModule = defaultReducersModule or Reducers.Mixed
+    self._defaultReducersModule = options and options.module or Reducers.Mixed
     
     self._cleaner = Cleaner.new()
     self._channelCleaner = Cleaner.new()
 
     self._serverSignal = self._cleaner:give(ServerSignal.new(remoteEvent, {
-        outboundMiddleware = {
+        log = options and options.log,
+        outbound = {
             Middleware.Outbound.instanceKeyEncoder(),
-        }
+        },
     }))
     
-    self._serverCallback = self._cleaner:give(ServerCallback.new(remoteFunction))
+    self._serverCallback = self._cleaner:give(ServerCallback.new(remoteFunction, {
+        log = options and options.log,
+    }))
 
     self._serverCallback:setCallback(function()
         return self._defaultReducersModule

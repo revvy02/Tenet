@@ -39,7 +39,7 @@ return function()
             end
 
             local serverSignal = ServerSignal.new(server:createRemoteEvent("remoteEvent"), {
-                inboundMiddleware = {
+                inbound = {
                     middleware({
                         index = 1,
                         password = "1234",
@@ -97,7 +97,7 @@ return function()
             end
 
             local serverSignal = ServerSignal.new(server:createRemoteEvent("remoteEvent"), {
-                outboundMiddleware = {
+                outbound = {
                     middleware({
                         index = 1,
                         password = "1234",
@@ -418,7 +418,7 @@ return function()
             end
 
             local serverSignal = ServerSignal.new(mockRemoteEvent, {
-                inboundMiddleware = {
+                inbound = {
                     middleware(function()
                         destroyed1 = true
                     end),
@@ -426,7 +426,7 @@ return function()
                         destroyed2 = true
                     end),
                 },
-                outboundMiddleware = {
+                outbound = {
                     middleware(function()
                         destroyed3 = true
                     end),

@@ -21,7 +21,7 @@ function ServerBroadcast.new(remoteEvent, remoteFunction, defaultReducersModule)
     self._channelCleaner = Cleaner.new()
 
     self._serverSignal = self._cleaner:give(ServerSignal.new(remoteEvent, {
-        outboundMiddleware = {
+        outbound = {
             Middleware.Outbound.instanceKeyEncoder(),
         }
     }))

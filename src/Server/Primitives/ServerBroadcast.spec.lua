@@ -21,6 +21,22 @@ return function()
             expect(serverBroadcast).to.be.a("table")
             expect(getmetatable(serverBroadcast)).to.equal(ServerBroadcast)
         end)
+        
+        it("should handle logging correctly", function()
+            local passed = {}
+
+            local server = MockNetwork.Server.new({"user1", "user2"})
+            local clients = server:mapClients()
+
+            local serverBroadcast = ServerBroadcast.new(server:createRemoteEvent("remoteEvent"), server:createRemoteFunction("remoteFunction"), {
+                log = function()
+
+                end,
+            })
+
+            local clientBroadcasts = server:mapClients(mapClientBroadcasts)
+
+        end)
     end)
 
     describe("ServerBroadcast:createAtomicChannel", function()
@@ -83,7 +99,9 @@ return function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
             local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction, Reducers.Dictionary)
+            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction, {
+                module = Reducers.Dictionary,
+            })
 
             local acServer = serverBroadcast:createAtomicChannel("main", {value1 = {}, value2 = 3}, Reducers.Value)
 
@@ -130,7 +148,9 @@ return function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
             local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction, Reducers.Dictionary)
+            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction, {
+                module = Reducers.Dictionary
+            })
 
             local acServer = serverBroadcast:createAtomicChannel("main", {value1 = {}, value2 = 3})
 
@@ -209,7 +229,9 @@ return function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
             local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction, Reducers.Dictionary)
+            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction, {
+                module = Reducers.Dictionary
+            })
 
             local ncServer = serverBroadcast:createNonatomicChannel("main", {value1 = {}, value2 = 3}, Reducers.Value)
 
@@ -256,7 +278,9 @@ return function()
             local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
             local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
 
-            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction, Reducers.Dictionary)
+            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction, {
+                module = Reducers.Dictionary
+            })
 
             local ncServer = serverBroadcast:createNonatomicChannel("main", {value1 = {}, value2 = 3})
 

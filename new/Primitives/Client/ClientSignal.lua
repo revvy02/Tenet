@@ -34,9 +34,9 @@ function ClientSignal.new(remoteEvent, options)
     end
     
     if options then
-        if options.inboundMiddleware then
-            for i = #options.inboundMiddleware, 1, -1 do
-                local nextOnClientEvent, cleanup = options.inboundMiddleware[i](onClientEvent, self)
+        if options.inbound then
+            for i = #options.inbound, 1, -1 do
+                local nextOnClientEvent, cleanup = options.inbound[i](onClientEvent, self)
                 onClientEvent = nextOnClientEvent
 
                 if cleanup then
@@ -45,9 +45,9 @@ function ClientSignal.new(remoteEvent, options)
             end
         end
 
-        if options.outboundMiddleware then
-            for i = #options.outboundMiddleware, 1, -1 do
-                local nextFireServer, cleanup = options.outboundMiddleware[i](fireServer, self)
+        if options.outbound then
+            for i = #options.outbound, 1, -1 do
+                local nextFireServer, cleanup = options.outbound[i](fireServer, self)
                 fireServer = nextFireServer
 
                 if cleanup then

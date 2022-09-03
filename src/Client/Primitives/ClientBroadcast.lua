@@ -58,7 +58,7 @@ function ClientBroadcast.new(remoteEvent, remoteFunction)
     self._cleaner = Cleaner.new()
 
     self._clientSignal = self._cleaner:give(ClientSignal.new(remoteEvent, {
-        inboundMiddleware = {
+        inbound = {
             Middleware.Inbound.instanceKeyDecoder(),
         }
     }))

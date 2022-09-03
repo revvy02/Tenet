@@ -38,9 +38,9 @@ function ClientCallback.new(remoteFunction, options)
     end
 
     if options then
-        if options.inboundMiddleware then
-            for i = #options.inboundMiddleware, 1, -1 do
-                local nextOnClientInvoke, cleanup = options.inboundMiddleware[i](onClientInvoke, self)
+        if options.inbound then
+            for i = #options.inbound, 1, -1 do
+                local nextOnClientInvoke, cleanup = options.inbound[i](onClientInvoke, self)
                 onClientInvoke = nextOnClientInvoke
 
                 if cleanup then
@@ -49,15 +49,15 @@ function ClientCallback.new(remoteFunction, options)
             end
         end
 
-        if options.outboundMiddleware then
+        if options.outbound then
             local unboundCallServerAsync = self.callServerAsync
 
             local callServerAsync = function(...)
                 return unboundCallServerAsync(self, ...)
             end
 
-            for i = #options.outboundMiddleware, 1, -1 do
-                local nextCallServerAsync, cleanup = options.outboundMiddleware[i](callServerAsync, self)
+            for i = #options.outbound, 1, -1 do
+                local nextCallServerAsync, cleanup = options.outbound[i](callServerAsync, self)
                 callServerAsync = nextCallServerAsync
 
                 if cleanup then

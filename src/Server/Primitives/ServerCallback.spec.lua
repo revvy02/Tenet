@@ -40,7 +40,7 @@ return function()
             end
 
             local serverCallback = ServerCallback.new(server:createRemoteFunction("remoteFunction"), {
-                inboundMiddleware = {
+                inbound = {
                     middleware({
                         index = 1,
                         password = "1234",
@@ -98,7 +98,7 @@ return function()
             end
 
             local serverCallback = ServerCallback.new(server:createRemoteFunction("remoteFunction"), {
-                outboundMiddleware = {
+                outbound = {
                     middleware({
                         index = 1,
                         password = "1234",
@@ -134,6 +134,42 @@ return function()
 
             expect(dropped[clients.user3]).to.never.be.ok()
             expect(passed[clients.user3]).to.be.ok()
+        end)
+
+        it("should handle logging correctly", function()
+            local passed = {}
+
+            local server = MockNetwork.Server.new({"user1", "user2", "user3"})
+            local clients = server:mapClients()
+
+            local serverCallback = ServerCallback.new(server:createRemoteFunction("remoteFunction"), {
+                log = function(client)
+                    passed[client] = true
+                end,
+                outbound = {
+                    function(nextMiddleware, _, log)
+                        return function(player, ...)
+                            if player == clients.user1 or player == clients.user2 then
+                                log(player)
+                            else
+                                return nextMiddleware(player, ...)
+                            end
+                        end
+                    end,
+                },
+            })
+
+            expect(passed[clients.user1]).to.never.be.ok()
+            expect(passed[clients.user2]).to.never.be.ok()
+            expect(passed[clients.user3]).to.never.be.ok()
+
+            serverCallback:callClientAsync(clients.user1)
+            serverCallback:callClientAsync(clients.user2)
+            serverCallback:callClientAsync(clients.user3)
+
+            expect(passed[clients.user1]).to.be.ok()
+            expect(passed[clients.user2]).to.be.ok()
+            expect(passed[clients.user3]).to.never.be.ok()
         end)
     end)
 
@@ -309,7 +345,7 @@ return function()
             end
 
             local serverCallback = ServerCallback.new(mockRemoteFunction , {
-                inboundMiddleware = {
+                inbound = {
                     middleware(function()
                         destroyed1 = true
                     end),
@@ -317,7 +353,7 @@ return function()
                         destroyed2 = true
                     end),
                 },
-                outboundMiddleware = {
+                outbound = {
                     middleware(function()
                         destroyed3 = true
                     end),
