@@ -3,18 +3,28 @@ local NetPass = require(script.Parent.Parent.Parent.Parent.NetPass)
 local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
 
 --[=[
-    Stellar equivalent for RemoteEvent
+    RemoteEvent server wrapper class that implements logging and middleware
 
-    @class ServerSignaL
+    @class ServerSignal
 ]=]
 local ServerSignal = {}
 ServerSignal.__index = ServerSignal
 
 --[=[
+    Flushes any pending requests and prepares the ServerSignal object for garbage collection
+
+    @private
+]=]
+function ServerSignal:_destroy()
+    self:flush()
+    self._cleaner:destroy()
+end
+
+--[=[
     Constructs a new ServerSignal object
 
     @param remoteEvent RemoteEvent
-    @param options Options
+    @param options {inbound: {...function}, outbound: {...function}, log: ((...any) -> ())}
     @return ServerSignal
 ]=]
 function ServerSignal.new(remoteEvent, options)
@@ -75,6 +85,7 @@ end
     Fires the client with the passed args
 
     @param client Player
+    @param ... any
 ]=]
 function ServerSignal:fireClient(client, ...)
     -- self._remote:FireClient(client, NetPass.encode(...))
@@ -85,6 +96,7 @@ end
     Fires the each client in the passed client list with the passed args
 
     @param clients {...Player}
+    @param ... any
 ]=]
 function ServerSignal:fireClients(clients, ...)
     for _, client in pairs(clients) do
@@ -114,14 +126,6 @@ end
 ]=]
 function ServerSignal:promise()
     return self._signal:promise()
-end
-
---[=[
-    Flushes any pending requests and prepares the ServerSignal object for garbage collection
-]=]
-function ServerSignal:destroy()
-    self:flush()
-    self._cleaner:destroy()
 end
 
 return ServerSignal

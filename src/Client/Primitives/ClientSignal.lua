@@ -3,12 +3,22 @@ local NetPass = require(script.Parent.Parent.Parent.Parent.NetPass)
 local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
 
 --[=[
-    ClientSignal class
+    RemoteEvent client wrapper class that implements middleware
 
     @class ClientSignal
 ]=]
 local ClientSignal = {}
 ClientSignal.__index = ClientSignal
+
+--[=[
+    Flushes any pending requests and prepares the ClientSignal object for garbage collection
+
+    @private
+]=]
+function ClientSignal:_destroy()
+    self:flush()
+    self._cleaner:destroy()
+end
 
 --[=[
     Constructs a new ClientSignal object
@@ -22,10 +32,6 @@ function ClientSignal.new(remoteEvent, options)
 
     self._cleaner = Cleaner.new()
 
-    --[[
-        Don't have to worry about caching behavior unique to remotes
-        since Slick.Signal can handle or flush queued arguments
-    ]]
     self._signal = self._cleaner:give(TrueSignal.new(false, true))
     
     self._remote = remoteEvent
@@ -108,14 +114,6 @@ end
 ]=]
 function ClientSignal:promise()
     return self._signal:promise()
-end
-
---[=[
-    Flushes any pending requests and prepares the ClientSignal object for garbage collection
-]=]
-function ClientSignal:destroy()
-    self:flush()
-    self._cleaner:destroy()
 end
 
 return ClientSignal

@@ -1,12 +1,18 @@
 local Slick = require(script.Parent.Parent.Parent.Parent.Slick)
 
+--[=[
+    Client channel class for atomic state reception
+
+    @class AtomicChannelClient
+]=]
 local AtomicChannelClient = {}
 AtomicChannelClient.__index = AtomicChannelClient
 
 --[=[
     Creates a new AtomicChannelClient
 
-    @param reducers table
+    @param initial table?
+    @param reducers table?
     @return AtomicChannelClient
 
     @private
@@ -16,7 +22,22 @@ function AtomicChannelClient._new(initial, reducers)
 
     self._store = Slick.Store.new(initial, reducers)
 
+    --[=[
+        Signal that gets fired once key in store is reduced
+
+        @prop reduced TrueSignal
+        @readonly
+        @within AtomicChannelClient
+    ]=]
     self.reduced = self._store.reduced
+
+    --[=[
+        Signal that gets fired once key in store is changed
+
+        @prop changed TrueSignal
+        @readonly
+        @within AtomicChannelClient
+    ]=]
     self.changed = self._store.changed
 
     return self
@@ -47,7 +68,7 @@ end
 --[=[
     Gets the key value from store
 
-    @key any
+    @param key any
     @return any
 ]=]
 function AtomicChannelClient:getValue(key)
@@ -57,7 +78,7 @@ end
 --[=[
     Gets the signal that's fired when the key changes
 
-    @key any
+    @param key any
     @return TrueSignal
 ]=]
 function AtomicChannelClient:getChangedSignal(key)

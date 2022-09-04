@@ -4,7 +4,7 @@ local Promise = require(script.Parent.Parent.Parent.Parent.Promise)
 local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
 
 --[=[
-    NonatomicChannelClient class
+    Client channel class for nonatomic state reception
 
     @class NonatomicChannelClient
 ]=]
@@ -28,10 +28,40 @@ function NonatomicChannelClient._new(initial, reducers)
 
     self._loaded = {}
 
-    self.changed = self._store.changed
+    --[=[
+        Signal that gets fired once key in store is reduced
+
+        @prop reduced TrueSignal
+        @readonly
+        @within NonatomicChannelClient
+    ]=]
     self.reduced = self._store.reduced
 
+    --[=[
+        Signal that gets fired once key in store is changed
+
+        @prop changed TrueSignal
+        @readonly
+        @within NonatomicChannelClient
+    ]=]
+    self.changed = self._store.changed
+
+    --[=[
+        Signal that gets fired once a key is streamed to the client
+
+        @prop streamed TrueSignal
+        @readonly
+        @within NonatomicChannelServer
+    ]=]
     self.streamed = self._cleaner:give(TrueSignal.new())
+
+    --[=[
+        Signal that gets fired once a key is unstreamed from the client
+
+        @prop unstreamed TrueSignal
+        @readonly
+        @within NonatomicChannelServer
+    ]=]
     self.unstreamed = self._cleaner:give(TrueSignal.new())
 
     return self
@@ -89,7 +119,7 @@ end
 --[=[
     Gets the key value from store
 
-    @key any
+    @param key any
     @return any
 ]=]
 function NonatomicChannelClient:getValue(key)
@@ -99,7 +129,7 @@ end
 --[=[
     Gets the signal that's fired when the key changes
 
-    @key any
+    @param key any
     @return TrueSignal
 ]=]
 function NonatomicChannelClient:getChangedSignal(key)
@@ -109,7 +139,8 @@ end
 --[=[
     Gets the signal that's fired when the key changes
 
-    @key any
+    @param key any
+    @param reducer string
     @return TrueSignal
 ]=]
 function NonatomicChannelClient:getReducedSignal(key, reducer)

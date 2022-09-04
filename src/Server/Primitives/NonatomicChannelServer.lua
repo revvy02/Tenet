@@ -3,7 +3,7 @@ local Cleaner = require(script.Parent.Parent.Parent.Parent.Cleaner)
 local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
 
 --[=[
-    Channel class for replicating state nonatomically to clients
+    Server channel class for nonatomic state transmission
 
     @class NonatomicChannelServer
 ]=]

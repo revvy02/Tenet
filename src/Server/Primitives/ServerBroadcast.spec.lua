@@ -383,42 +383,4 @@ return function()
             expect(serverBroadcast:getChannel("store")).to.equal(acServer)
         end)
     end)
-
-    describe("ServerBroadcast:destroy", function()
-        it("should disconnect any connections", function()
-            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
-            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
-
-            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
-
-            local connection0 = serverBroadcast.created:connect(function() end)
-            local connection1 = serverBroadcast.removed:connect(function() end)
-
-            serverBroadcast:destroy()
-
-            expect(connection0.connected).to.equal(false)
-            expect(connection1.connected).to.equal(false)
-        end)
-
-        it("should destroy any channels and fire the removed signal with all of them", function()
-            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
-            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
-
-            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
-
-            local done = {}
-
-            serverBroadcast.removed:connect(function(host)
-                done[host] = true
-            end)
-
-            serverBroadcast:createAtomicChannel("atomic")
-            serverBroadcast:createNonatomicChannel("nonatomic")
-
-            serverBroadcast:destroy()
-
-            expect(done.atomic).to.equal(true)
-            expect(done.nonatomic).to.equal(true)
-        end)
-    end)
 end

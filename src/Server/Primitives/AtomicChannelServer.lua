@@ -3,9 +3,9 @@ local Cleaner = require(script.Parent.Parent.Parent.Parent.Cleaner)
 local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
 
 --[=[
-    Channel class for replicating state atomically to clients
+    Server channel class for atomic state transmission
 
-    @class NonatomicChannelServer
+    @class AtomicChannelServer
 ]=]
 local AtomicChannelServer = {}
 AtomicChannelServer.__index = AtomicChannelServer
@@ -58,7 +58,7 @@ function AtomicChannelServer._new(serverBroadcast, host, initialState, reducersM
 
         @prop reduced TrueSignal
         @readonly
-        @within NonatomicChannelServer
+        @within AtomicChannelServer
     ]=]
     self.reduced = self._store.reduced
 
@@ -67,7 +67,7 @@ function AtomicChannelServer._new(serverBroadcast, host, initialState, reducersM
 
         @prop changed TrueSignal
         @readonly
-        @within NonatomicChannelServer
+        @within AtomicChannelServer
     ]=]
     self.changed = self._store.changed
     
@@ -76,7 +76,7 @@ function AtomicChannelServer._new(serverBroadcast, host, initialState, reducersM
 
         @prop subscribed TrueSignal
         @readonly
-        @within NonatomicChannelServer
+        @within AtomicChannelServer
     ]=]
     self.subscribed = self._cleaner:give(TrueSignal.new())
 
@@ -85,7 +85,7 @@ function AtomicChannelServer._new(serverBroadcast, host, initialState, reducersM
 
         @prop unsubscribed TrueSignal
         @readonly
-        @within NonatomicChannelServer
+        @within AtomicChannelServer
     ]=]
     self.unsubscribed = self._cleaner:give(TrueSignal.new())
 

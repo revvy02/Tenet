@@ -40,21 +40,4 @@ return function()
             expect(clientBroadcast:getChannel("store")).to.be.ok()
         end)
     end)
-
-    describe("ClientBroadcast:destroy", function()
-        it("should disconnect any connections", function()
-            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
-            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
-
-            local clientBroadcast = ClientBroadcast.new(mockRemoteEvent, mockRemoteFunction)
-
-            local connection0 = clientBroadcast.subscribed:connect(function() end)
-            local connection1 = clientBroadcast.unsubscribed:connect(function() end)
-
-            clientBroadcast:destroy()
-
-            expect(connection0.connected).to.equal(false)
-            expect(connection1.connected).to.equal(false)
-        end)
-    end)
 end

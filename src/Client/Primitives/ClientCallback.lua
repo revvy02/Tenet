@@ -3,12 +3,22 @@ local Cleaner = require(script.Parent.Parent.Parent.Parent.Cleaner)
 local NetPass = require(script.Parent.Parent.Parent.Parent.NetPass)
 
 --[=[
-    ClientCallback class
+    RemoteFunction client wrapper class that implements logging and middleware
 
     @class ClientCallback
 ]=]
 local ClientCallback = {}
 ClientCallback.__index = ClientCallback
+
+--[=[
+    Flushes any requests and prepares the ClientCallback object for garbage collection
+
+    @private
+]=]
+function ClientCallback:_destroy()
+    self:flush()
+    self._cleaner:destroy()
+end
 
 --[=[
     Constructs a new ClientCallback object
@@ -118,14 +128,6 @@ function ClientCallback:callServerAsync(...)
         -- return NetPass.decode(self._remote:InvokeServer(NetPass.encode(...)))
         return self._remote:InvokeServer(...)
     end, ...)
-end
-
---[=[
-    Flushes any requests and prepares the ClientCallback object for garbage collection
-]=]
-function ClientCallback:destroy()
-    self:flush()
-    self._cleaner:destroy()
 end
 
 return ClientCallback

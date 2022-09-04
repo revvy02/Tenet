@@ -22,7 +22,7 @@ ServerBroadcast.__index = ServerBroadcast
 
     @param remoteEvent RemoteEvent
     @param remoteFunction RemoteFunction
-    @param defaultReducersModule ModuleScript?
+    @param options {module: ModuleScript?, log: ((...) -> ())?}
     @return ServerBroadcast
 ]=]
 function ServerBroadcast.new(remoteEvent, remoteFunction, options)
@@ -106,7 +106,7 @@ end
     Returns the channel with the passed host
 
     @param host any
-    @param return AtomicChannelServer | NonatomicChannelServer
+    @return AtomicChannelServer | NonatomicChannelServer
 ]=]
 function ServerBroadcast:getChannel(host)
     return self._channelCleaner:get(host)
@@ -114,8 +114,10 @@ end
 
 --[=[
     Removes any channels and prepares the ServerBroadcast object for garbage collection
+
+    @private
 ]=]
-function ServerBroadcast:destroy()
+function ServerBroadcast:_destroy()
     self._channelCleaner:destroy()
     self._cleaner:destroy()
 end

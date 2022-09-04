@@ -45,11 +45,20 @@ local ClientBroadcast = {}
 ClientBroadcast.__index = ClientBroadcast
 
 --[=[
+    Removes any channels and prepares the ClientBroadcast object for garbage collection
+
+    @private
+]=]
+function ClientBroadcast:_destroy()
+    self._promise:cancel()
+    self._cleaner:destroy()
+end
+
+--[=[
     Constructs a new ClientBroadcast object
 
     @param remoteEvent RemoteEvent
     @param remoteFunction RemoteFunction
-    @param defaultReducersModule ModuleScript?
     @return ClientBroadcast
 ]=]
 function ClientBroadcast.new(remoteEvent, remoteFunction)
@@ -102,14 +111,6 @@ end
 ]=]
 function ClientBroadcast:getChannel(host)
     return self._cleaner:get(host)
-end
-
---[=[
-    Removes any channels and prepares the ClientBroadcast object for garbage collection
-]=]
-function ClientBroadcast:destroy()
-    self._promise:cancel()
-    self._cleaner:destroy()
 end
 
 return ClientBroadcast

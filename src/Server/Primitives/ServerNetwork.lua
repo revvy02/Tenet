@@ -9,9 +9,35 @@ local ServerSignal = require(script.Parent.ServerSignal)
 local ServerCallback = require(script.Parent.ServerCallback)
 local ServerBroadcast = require(script.Parent.ServerBroadcast)
 
+local holder = Instance.new("Folder")
+holder.Name = "Stellar"
+holder.Parent = ReplicatedStorage
+
+--[=[
+    Server class for holding network primitives
+
+    @class ServerNetwork
+]=]
 local ServerNetwork = {}
 
+--[=[
+    Cleans up the ServerNetwork object and preapres it for garbage collection
+
+    @private
+]=]
+function ServerNetwork:_destroy()
+    self._cleaner:destroy()
+end
+
+--[=[
+    Constructs a new ServerNetwork object
+
+    @param name string
+    @return ServerNetwork
+]=]
 function ServerNetwork.new(name)
+    assert(not holder:FindFirstChild(name), string.format("%s is already an existing ServerNetwork", name))
+
     local self = setmetatable({}, ServerNetwork)
 
     self._cleaner = Cleaner.new()
@@ -39,11 +65,18 @@ function ServerNetwork.new(name)
         self.logged:fire(...)
     end
 
-    self._networkFolder.Parent = ReplicatedStorage
+    self._networkFolder.Parent = holder
 
     return self
 end
 
+--[=[
+    Creates a new ServerSignal object
+
+    @param name string
+    @param options {inbound: {...function}, outbound: {...function}, log: ((...any) -> ())}
+    @return ServerSignal
+]=]
 function ServerNetwork:createServerSignal(name, options)
     assert(not self._store:getValue("serverSignals")[name], string.format("%s is already an existing ServerSignal", name))
 
@@ -59,6 +92,12 @@ function ServerNetwork:createServerSignal(name, options)
     return self._store:getValue("serverSignals")[name]
 end
 
+--[=[
+    Returns a promise that resolves when the the ServerSignal object with the name is created
+
+    @param name string
+    @return Promise
+]=]
 function ServerNetwork:getServerSignalAsync(name)
     if self:_get("serverSignals", name) then
         return Promise.resolve(self._store:getValue("serverSignals")[name])
@@ -71,8 +110,13 @@ function ServerNetwork:getServerSignalAsync(name)
     end)
 end
 
+--[=[
+    Creates a new ServerCallback object
 
-
+    @param name string
+    @param options {inbound: {...function}, outbound: {...function}, log: (...any) -> ()}
+    @return ServerCallback
+]=]
 function ServerNetwork:createServerCallback(name, options)
     assert(not self._store:getValue("serverCallbacks")[name], string.format("%s is already an existing ServerCallback", name))
 
@@ -89,6 +133,12 @@ function ServerNetwork:createServerCallback(name, options)
     return self._store:getValue("serverCallbacks")[name]
 end
 
+--[=[
+    Returns a promise that resolves when the the ServerCallback object with the name is created
+
+    @param name string
+    @return Promise
+]=]
 function ServerNetwork:getServerCallbackAsync(name)
     if self:_get("serverCallbacks", name) then
         return Promise.resolve(self._store:getValue("serverCallbacks")[name])
@@ -101,6 +151,13 @@ function ServerNetwork:getServerCallbackAsync(name)
     end)
 end
 
+--[=[
+    Creates a new ServerBroadcast object
+
+    @param name string
+    @param options {module: ModuleScript?, log: ((...) -> ())?}
+    @return ServerBroadcast
+]=]
 function ServerNetwork:createServerBroadcast(name, options)
     assert(not self._store:getValue("serverBroadcasts")[name], string.format("%s is already an existing ServerBroadcast", name))
 
@@ -121,6 +178,12 @@ function ServerNetwork:createServerBroadcast(name, options)
     return self._store:getValue("serverBroadcasts")[name]
 end
 
+--[=[
+    Returns a promise that resolves when the the ServerBroadcast object with the name is created
+
+    @param name string
+    @return Promise
+]=]
 function ServerNetwork:getServerBroadcastAsync(name)
     if self:_get("serverBroadcasts", name) then
         return Promise.resolve(self._store:getValue("serverBroadcasts")[name])
@@ -131,10 +194,6 @@ function ServerNetwork:getServerBroadcastAsync(name)
     end):andThen(function()
         return self._store:getValue("serverBroadcasts")[name]
     end)
-end
-
-function ServerNetwork:destroy()
-    self._cleaner:destroy()
 end
 
 return ServerNetwork

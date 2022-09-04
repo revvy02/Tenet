@@ -3,7 +3,7 @@ local Cleaner = require(script.Parent.Parent.Parent.Parent.Cleaner)
 local NetPass = require(script.Parent.Parent.Parent.Parent.NetPass)
 
 --[=[
-    Stellar equivalent for RemoteFunction
+    RemoteFunction server wrapper class that implements logging and middleware
 
     @class ServerCallback
 ]=]
@@ -11,10 +11,21 @@ local ServerCallback = {}
 ServerCallback.__index = ServerCallback
 
 --[=[
+    Flushes any pending requests and prepares the ServerCallback object for garbage collection
+
+    @private
+]=]
+function ServerCallback:_destroy()
+    self:flush()
+    self._cleaner:destroy()
+end
+
+
+--[=[
     Constructs a new ServerCallback object
 
     @param remoteFunction RemoteFunction
-    @param options Options
+    @param options {inbound: {...function}, outbound: {...function}, log: (...any) -> ()}
     @return ServerCallback
 ]=]
 function ServerCallback.new(remoteFunction, options)
@@ -83,8 +94,6 @@ end
     Sets the callback for the ServerCallback object
 
     @param callback (Player, ...any) -> (...any)
-    @param options Options
-    @return ServerCallback
 ]=]
 function ServerCallback:setCallback(callback)
     self._callback = callback
@@ -121,14 +130,6 @@ function ServerCallback:callClientAsync(client, ...)
         -- return NetPass.decode(self._remote:InvokeClient(client, NetPass.encode(...)))
         return self._remote:InvokeClient(client, ...)
     end, ...)
-end
-
---[=[
-    Flushes any pending requests and prepares the ServerCallback object for garbage collection
-]=]
-function ServerCallback:destroy()
-    self:flush()
-    self._cleaner:destroy()
 end
 
 return ServerCallback
