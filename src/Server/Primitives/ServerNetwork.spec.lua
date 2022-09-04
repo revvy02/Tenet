@@ -1,6 +1,4 @@
-local MockNetwork = require(script.Parent.Parent.Parent.Parent.MockNetwork)
 local Promise = require(script.Parent.Parent.Parent.Parent.Promise)
-
 
 local ServerNetwork = require(script.Parent.ServerNetwork)
 local ServerSignal = require(script.Parent.ServerSignal)
@@ -15,7 +13,7 @@ return function()
             expect(serverNetwork).to.be.ok()
             expect(getmetatable(serverNetwork)).to.equal(ServerNetwork)
 
-            serverNetwork:destroy()
+            serverNetwork:_destroy()
         end)
 
         it("should throw if a ServerNetwork object with that name already exists", function()
@@ -25,7 +23,7 @@ return function()
                 ServerNetwork.new("game")
             end).to.throw()
 
-            serverNetwork:destroy()
+            serverNetwork:_destroy()
         end)
     end)
 
@@ -37,18 +35,18 @@ return function()
             expect(serverSignal).to.be.ok()
             expect(getmetatable(serverSignal)).to.equal(ServerSignal)
 
-            serverNetwork:destroy()
+            serverNetwork:_destroy()
         end)
 
         it("should throw if a ServerSignal object with that name already exists", function()
             local serverNetwork = ServerNetwork.new("game")
-            serverNetwork:createServerSignal("serverSignal")
+            serverNetwork:createServerSignal("signal")
             
             expect(function()
-                serverNetwork:createServerSignal("serverSignal")
+                serverNetwork:createServerSignal("signal")
             end).to.throw()
 
-            serverNetwork:destroy()
+            serverNetwork:_destroy()
         end)
     end)
 
@@ -56,13 +54,13 @@ return function()
         it("should return a promise that resolves when the ServerSignal object is created", function()
             local serverNetwork = ServerNetwork.new("game")
 
-            local promise = serverNetwork:getServerSignalAsync("serverSignal")
+            local promise = serverNetwork:getServerSignalAsync("signal")
             local serverSignal
             
             expect(promise:getStatus()).to.equal(Promise.Status.Started)
 
             task.spawn(function()
-                serverSignal = serverNetwork:createServerSignal("serverSignal")
+                serverSignal = serverNetwork:createServerSignal("signal")
             end)
 
             expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
@@ -70,19 +68,19 @@ return function()
             expect(serverSignal).to.be.ok()
             expect(promise:expect()).to.equal(serverSignal)
 
-            serverNetwork:destroy()
+            serverNetwork:_destroy()
         end)
     end)
 
     describe("ServerNetwork:createServerCallback", function()
         it("should create a new ServerCallback object", function()
             local serverNetwork = ServerNetwork.new("game")
-            local serverCallback = serverNetwork:createServerCallback("serverCallback")
+            local serverCallback = serverNetwork:createServerCallback("callback")
 
             expect(serverCallback).to.be.ok()
             expect(getmetatable(serverCallback)).to.equal(ServerCallback)
 
-            serverNetwork:destroy()
+            serverNetwork:_destroy()
         end)
     end)
 
@@ -90,13 +88,13 @@ return function()
         it("should return a promise that resolves when the ServerCallback object is created", function()
             local serverNetwork = ServerNetwork.new("game")
 
-            local promise = serverNetwork:getServerCallbackAsync("serverCallback")
+            local promise = serverNetwork:getServerCallbackAsync("callback")
             local serverCallback
             
             expect(promise:getStatus()).to.equal(Promise.Status.Started)
 
             task.spawn(function()
-                serverCallback = serverNetwork:createServerCallback("serverCallback")
+                serverCallback = serverNetwork:createServerCallback("callback")
             end)
 
             expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
@@ -104,19 +102,19 @@ return function()
             expect(serverCallback).to.be.ok()
             expect(promise:expect()).to.equal(serverCallback)
 
-            serverNetwork:destroy()
+            serverNetwork:_destroy()
         end)
     end)
 
     describe("ServerNetwork:createServerBroadcast", function()
         it("should create a new ServerBroadcast object", function()
             local serverNetwork = ServerNetwork.new("game")
-            local serverBroadcast = serverNetwork:createServerBroadcast("serverBroadcast")
+            local serverBroadcast = serverNetwork:createServerBroadcast("broadcast")
 
             expect(serverBroadcast).to.be.ok()
             expect(getmetatable(serverBroadcast)).to.equal(ServerBroadcast)
 
-            serverNetwork:destroy()
+            serverNetwork:_destroy()
         end)
     end)
 
@@ -124,13 +122,13 @@ return function()
         it("should return a promise that resolves when the ServerBroadcast object is created", function()
             local serverNetwork = ServerNetwork.new("game")
 
-            local promise = serverNetwork:getServerBroadcastAsync("serverBroadcast")
+            local promise = serverNetwork:getServerBroadcastAsync("broadcast")
             local serverBroadcast
             
             expect(promise:getStatus()).to.equal(Promise.Status.Started)
 
             task.spawn(function()
-                serverBroadcast = serverNetwork:createServerBroadcast("serverBroadcast")
+                serverBroadcast = serverNetwork:createServerBroadcast("broadcast")
             end)
 
             expect(promise:getStatus()).to.equal(Promise.Status.Resolved)
@@ -138,7 +136,7 @@ return function()
             expect(serverBroadcast).to.be.ok()
             expect(promise:expect()).to.equal(serverBroadcast)
 
-            serverNetwork:destroy()
+            serverNetwork:_destroy()
         end)
     end)
 end

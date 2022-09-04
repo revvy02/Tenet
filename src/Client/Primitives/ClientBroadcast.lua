@@ -70,9 +70,9 @@ function ClientBroadcast.new(remoteEvent, remoteFunction)
         inbound = {
             Middleware.Inbound.instanceKeyDecoder(),
         }
-    }))
+    }), ClientSignal._destroy)
 
-    self._clientCallback = self._cleaner:give(ClientCallback.new(remoteFunction))
+    self._clientCallback = self._cleaner:give(ClientCallback.new(remoteFunction), ClientCallback._destroy)
     
     self._promise = self._clientCallback:callServerAsync()
 

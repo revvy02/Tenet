@@ -17,4 +17,7 @@ require(package.Parent.TestEZ).TestBootstrap:run({
     
     package.Client.Primitives["NonatomicChannelClient.spec"],
     package.Server.Primitives["NonatomicChannelServer.spec"],
+
+    package.Client.Primitives["ClientNetwork.spec"],
+    package.Server.Primitives["ServerNetwork.spec"],
 })

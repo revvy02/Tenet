@@ -38,11 +38,11 @@ function ServerBroadcast.new(remoteEvent, remoteFunction, options)
         outbound = {
             Middleware.Outbound.instanceKeyEncoder(),
         },
-    }))
+    }), ServerSignal._destroy)
     
     self._serverCallback = self._cleaner:give(ServerCallback.new(remoteFunction, {
         log = options and options.log,
-    }))
+    }), ServerCallback._destroy)
 
     self._serverCallback:setCallback(function()
         return self._defaultReducersModule

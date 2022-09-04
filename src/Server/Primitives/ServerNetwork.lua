@@ -19,6 +19,7 @@ holder.Parent = ReplicatedStorage
     @class ServerNetwork
 ]=]
 local ServerNetwork = {}
+ServerNetwork.__index = ServerNetwork
 
 --[=[
     Cleans up the ServerNetwork object and preapres it for garbage collection
@@ -45,13 +46,18 @@ function ServerNetwork.new(name)
     self._networkFolder = self._cleaner:give(Instance.new("Folder"))
     self._networkFolder.Name = name
 
-    self._serverSignalFolder = self._cleaner:give(Instance.new("Folder"))
-    self._serverCallbackFolder = self._cleaner:give(Instance.new("Folder"))
-    self._serverBroadcastFolder = self._cleaner:give(Instance.new("Folder"))
+    self._signalsFolder = self._cleaner:give(Instance.new("Folder"))
+    self._signalsFolder.Name = "Signals"
 
-    self._serverSignalFolder.Parent = self._networkFolder
-    self._serverCallbackFolder.Parent = self._networkFolder
-    self._serverBroadcastFolder.Parent = self._networkFolder
+    self._callbacksFolder = self._cleaner:give(Instance.new("Folder"))
+    self._callbacksFolder.Name = "Callbacks"
+
+    self._broadcastsFolder = self._cleaner:give(Instance.new("Folder"))
+    self._broadcastsFolder.Name = "Broadcasts"
+
+    self._signalsFolder.Parent = self._networkFolder
+    self._callbacksFolder.Parent = self._networkFolder
+    self._broadcastsFolder.Parent = self._networkFolder
 
     self._store = self._cleaner:give(Slick.Store.new({
         serverSignals = {},
@@ -81,13 +87,14 @@ function ServerNetwork:createServerSignal(name, options)
     assert(not self._store:getValue("serverSignals")[name], string.format("%s is already an existing ServerSignal", name))
 
     local remoteEvent = Instance.new("RemoteEvent")
-    remoteEvent.Parent = self._serverSignalFolder
+    remoteEvent.Name = name
+    remoteEvent.Parent = self._signalsFolder
 
-    self._store:dispatch("serverSignals", "setIndex", name, ServerSignal.new(remoteEvent, {
+    self._store:dispatch("serverSignals", "setIndex", name, self._cleaner:give(ServerSignal.new(remoteEvent, options and {
         log = options.log or self._log,
         inbound = options.inbound,
         outbound = options.outbound,
-    }))
+    }), ServerSignal._destroy))
 
     return self._store:getValue("serverSignals")[name]
 end
@@ -99,11 +106,11 @@ end
     @return Promise
 ]=]
 function ServerNetwork:getServerSignalAsync(name)
-    if self:_get("serverSignals", name) then
+    if self._store:getValue("serverSignals")[name] then
         return Promise.resolve(self._store:getValue("serverSignals")[name])
     end
 
-    return Promise.fromEvent(self._store:getReducedSignal("serverSignals", "setIndex"), function(index, value)
+    return Promise.fromEvent(self._store:getReducedSignal("serverSignals", "setIndex"), function(index)
         return index == name
     end):andThen(function()
         return self._store:getValue("serverSignals")[name]
@@ -122,13 +129,13 @@ function ServerNetwork:createServerCallback(name, options)
 
     local remoteFunction = Instance.new("RemoteFunction")
     remoteFunction.Name = name
-    remoteFunction.Parent = self._serverCallbacksFolder
+    remoteFunction.Parent = self._callbacksFolder
 
-    self._store:dispatch("serverCallbacks", "setIndex", name, ServerCallback.new(remoteFunction, {
+    self._store:dispatch("serverCallbacks", "setIndex", name, self._cleaner:give(ServerCallback.new(remoteFunction, options and {
         log = options.log or self._log,
         inbound = options.inbound,
         outbound = options.outbound,
-    }))
+    }), ServerCallback._destroy))
 
     return self._store:getValue("serverCallbacks")[name]
 end
@@ -140,7 +147,7 @@ end
     @return Promise
 ]=]
 function ServerNetwork:getServerCallbackAsync(name)
-    if self:_get("serverCallbacks", name) then
+    if self._store:getValue("serverCallbacks")[name] then
         return Promise.resolve(self._store:getValue("serverCallbacks")[name])
     end
 
@@ -168,24 +175,24 @@ function ServerNetwork:createServerBroadcast(name, options)
     folder.Name = name
     remoteEvent.Parent = folder
     remoteFunction.Parent = folder
-    folder.Parent = self._serverBroadcastFolder
+    folder.Parent = self._broadcastsFolder
 
-    self._store:dispatch("serverBroadcasts", "setIndex", name, ServerBroadcast.new(remoteEvent, remoteFunction, {
+    self._store:dispatch("serverBroadcasts", "setIndex", name, self._cleaner:give(ServerBroadcast.new(remoteEvent, remoteFunction, options and {
         log = options.log or self._log,
         module = options.module,
-    }))
+    }), ServerBroadcast._destroy))
 
     return self._store:getValue("serverBroadcasts")[name]
 end
 
 --[=[
-    Returns a promise that resolves when the the ServerBroadcast object with the name is created
+    Returns a promise that resolves when the the ServerNetwork object with the name is created
 
     @param name string
     @return Promise
 ]=]
 function ServerNetwork:getServerBroadcastAsync(name)
-    if self:_get("serverBroadcasts", name) then
+    if self._store:getValue("serverBroadcasts")[name] then
         return Promise.resolve(self._store:getValue("serverBroadcasts")[name])
     end
     
