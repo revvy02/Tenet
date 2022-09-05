@@ -1,7 +1,7 @@
 local Stellar = {
-    Client = require(script.Client),
-    Server = require(script.Server),
-    Shared = require(script.Shared),
+    Primitives = require(script.Primitives),
+    Middleware = require(script.Middleware),
+    Reducers = require(script.Reducers),
 }
 
 return Stellar

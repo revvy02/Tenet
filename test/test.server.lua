@@ -3,21 +3,30 @@ local package = game.ServerScriptService.Stellar
 package.Parent = game.ReplicatedStorage.Packages
 
 require(package.Parent.TestEZ).TestBootstrap:run({
-    package.Client.Primitives["ClientCallback.spec"],
-    package.Server.Primitives["ServerCallback.spec"],
-    
-    package.Client.Primitives["ClientSignal.spec"],
-    package.Server.Primitives["ServerSignal.spec"],
+    package.Primitives.Client["ClientSignal.spec"],
+    package.Primitives.Server["ServerSignal.spec"],
 
-    package.Client.Primitives["ClientBroadcast.spec"],
-    package.Server.Primitives["ServerBroadcast.spec"],
-    
-    package.Client.Primitives["AtomicChannelClient.spec"],
-    package.Server.Primitives["AtomicChannelServer.spec"],
-    
-    package.Client.Primitives["NonatomicChannelClient.spec"],
-    package.Server.Primitives["NonatomicChannelServer.spec"],
+    package.Primitives.Client["ClientCallback.spec"],
+    package.Primitives.Server["ServerCallback.spec"],
 
-    package.Client.Primitives["ClientNetwork.spec"],
-    package.Server.Primitives["ServerNetwork.spec"],
+    package.Primitives.Client["ClientBroadcast.spec"],
+    package.Primitives.Server["ServerBroadcast.spec"],
+
+    package.Primitives.Client["AtomicChannelClient.spec"],
+    package.Primitives.Server["AtomicChannelServer.spec"],
+
+    package.Primitives.Client["NonatomicChannelClient.spec"],
+    package.Primitives.Server["NonatomicChannelServer.spec"],
+
+    package.Primitives.Client["ClientNetwork.spec"],
+    package.Primitives.Server["ServerNetwork.spec"],
+
+    package.Middleware.Inbound.Client["clientInstanceKeyDecoder.spec"],
+    package.Middleware.Inbound.Server["serverInstanceKeyDecoder.spec"],
+
+    package.Middleware.Outbound.Client["clientInstanceKeyEncoder.spec"],
+    package.Middleware.Outbound.Server["serverInstanceKeyEncoder.spec"],
+
+    --package.Middleware.Inbound.Client["clientRuntimeTypechecker.spec"],
+    --package.Middleware.Inbound.Server["serverRuntimeTypechecker.spec"],
 })

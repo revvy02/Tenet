@@ -1,3 +1,0 @@
-local Inbound = {}
-
-return Inbound
