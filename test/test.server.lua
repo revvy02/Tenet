@@ -27,6 +27,5 @@ require(package.Parent.TestEZ).TestBootstrap:run({
     package.Middleware.Outbound.Client["clientInstanceKeyEncoder.spec"],
     package.Middleware.Outbound.Server["serverInstanceKeyEncoder.spec"],
 
-    --package.Middleware.Inbound.Client["clientRuntimeTypechecker.spec"],
-    --package.Middleware.Inbound.Server["serverRuntimeTypechecker.spec"],
+    package.Middleware.Inbound.Server["serverRuntimeTypechecker.spec"],
 })

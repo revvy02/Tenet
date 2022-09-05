@@ -5,7 +5,7 @@ local validateType = import("../validateType")
 
 local GuiService = BaseInstance:extend("GuiService")
 
-function GuiService.prototype:StreamNotification(data, notification)
+function GuiService.prototype:BroadcastNotification(data, notification)
 	validateType("data", data, "string")
 	validateType("noficiation", notification, "number")
 end
