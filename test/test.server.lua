@@ -28,4 +28,6 @@ require(package.Parent.TestEZ).TestBootstrap:run({
     package.Middleware.Outbound.Server["serverInstanceKeyEncoder.spec"],
 
     package.Middleware.Inbound.Server["serverRuntimeTypechecker.spec"],
+
+    package.Middleware.Inbound.Server["serverNetworkBlocker.spec"],
 })

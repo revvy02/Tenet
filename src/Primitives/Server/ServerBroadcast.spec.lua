@@ -23,19 +23,34 @@ return function()
         end)
         
         it("should handle logging correctly", function()
-            local passed = {}
+            local logs = {}
 
             local server = MockNetwork.Server.new({"user1", "user2"})
             local clients = server:mapClients()
 
             local serverBroadcast = ServerBroadcast.new(server:createRemoteEvent("remoteEvent"), server:createRemoteFunction("remoteFunction"), {
-                log = function()
-
+                log = function(message, info)
+                    table.insert(logs, {message = message, info = info})
                 end,
             })
 
             local clientBroadcasts = server:mapClients(mapClientBroadcasts)
 
+            clientBroadcasts.user1._clientSignal:fireServer("hax")
+
+            expect(logs[1].message).to.equal("serverNetworkBlocker violation")
+            expect(logs[1].info.client).to.equal(clients.user1)
+            expect(logs[1].info.args[1]).to.equal("hax")
+            expect(logs[1].info.tag).to.equal("serverBroadcast")
+
+            local promise = clientBroadcasts.user2._clientCallback:callServerAsync("free coins")
+
+            expect(logs[2].message).to.equal("serverRuntimeTypechecker violation")
+            expect(logs[2].info.client).to.equal(clients.user2)
+            expect(logs[2].info.args[1]).to.equal("free coins")
+            expect(logs[1].info.tag).to.equal("serverBroadcast")
+            
+            expect(promise:getStatus()).to.equal(Promise.Status.Rejected)
         end)
     end)
 

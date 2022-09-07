@@ -1,5 +1,6 @@
 local Cleaner = require(script.Parent.Parent.Parent.Parent.Cleaner)
 local TrueSignal = require(script.Parent.Parent.Parent.Parent.TrueSignal)
+local t = require(script.Parent.Parent.Parent.Parent.t)
 
 local Reducers = require(script.Parent.Parent.Parent.Reducers)
 local Middleware = require(script.Parent.Parent.Parent.Middleware)
@@ -39,12 +40,15 @@ function ServerBroadcast.new(remoteEvent, remoteFunction, options)
             Middleware.Outbound.Server.serverInstanceKeyEncoder(),
         },
         inbound = {
-            
-        }
+            Middleware.Inbound.Server.serverNetworkBlocker("serverBroadcast"),
+        },
     }), ServerSignal._destroy)
     
     self._serverCallback = self._cleaner:give(ServerCallback.new(remoteFunction, {
         log = options and options.log,
+        inbound = {
+            Middleware.Inbound.Server.serverRuntimeTypechecker(t.none, "serverBroadcast")
+        },
     }), ServerCallback._destroy)
 
     self._serverCallback:setCallback(function()

@@ -1,24 +1,22 @@
-local function runtimeTypechecker(typecheck, onFail)
-    return function(nextMiddleware, serverElement, log)
+local function runtimeTypechecker(typecheck, tag)
+    return function(nextMiddleware, primitive, log)
         return function(client, ...)
             if typecheck(...) then
                 return nextMiddleware(client, ...)
-            else
-                if onFail then
-                    task.spawn(onFail, serverElement, client, ...)
-                end
-
-                if log then
-                    log("serverRuntimeTypechecker violation", {
-                        client = client,
-                        typecheck = typecheck,
-                        args = {...},
-                        time = os.clock(),
-                    })
-                end
-
-                error("serverRuntimeTypechecker violation")
             end
+
+            if log then
+                log("serverRuntimeTypechecker violation", {
+                    tag = tag,
+                    args = {...},
+                    client = client,
+                    primitive = primitive,
+                    typecheck = typecheck,
+
+                })
+            end
+
+            error("serverRuntimeTypechecker violation")
         end
     end
 end
