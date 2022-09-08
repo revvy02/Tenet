@@ -1,5 +1,5 @@
 [package]
-name = "revvy02/Tenet"
+name = "revvy02/tenet"
 description = "Roblox networking library"
 version = "0.0.1"
 license = "MIT"
