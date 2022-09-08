@@ -1,4 +1,4 @@
-local package = game.ServerScriptService.Stellar
+local package = game.ServerScriptService.Tenet
 
 package.Parent = game.ReplicatedStorage.Packages
 

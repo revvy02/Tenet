@@ -10,7 +10,7 @@
     },
 
     "ServerScriptService": {
-      "Stellar": {
+      "Tenet": {
         "$path": "../src"
       }
     }
