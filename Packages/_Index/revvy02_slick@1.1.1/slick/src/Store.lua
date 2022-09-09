@@ -222,9 +222,16 @@ function Store:dispatch(key, reducer, ...)
         return
     end
 
+    if typeof(newValue) == "table" then
+        table.freeze(newValue)
+    end
+
     local newState = table.clone(oldState)
+
     newState[key] = newValue
-    
+
+    table.freeze(newState)
+
     self._state = newState
     self:_tryHistory(oldState)
 
@@ -250,7 +257,7 @@ end
 
     @param key any
     @param reducer any
-    @return Signal
+    @return TrueSignal
 ]=]
 function Store:getReducedSignal(key, reducer)
     return self:_findReducedSignal(key, reducer, true)
@@ -260,7 +267,7 @@ end
     Returns a signal that will be fired if the passed key value is changed
     
     @param key any
-    @return Signal
+    @return TrueSignal
 ]=]
 function Store:getChangedSignal(key)
     return self:_findChangedSignal(key, true)

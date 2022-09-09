@@ -1,7 +1,7 @@
 [package]
 name = "revvy02/tenet"
 description = "Roblox networking library"
-version = "0.0.1"
+version = "0.0.2"
 license = "MIT"
 authors = ["revvy02"]
 realm = "shared"
@@ -13,7 +13,7 @@ include = ["src", "src/**", "wally.toml", "default.project.json", "LICENSE"]
 [dependencies]
 TestEZ = "roblox/testez@0.4.1"
 Cleaner = "revvy02/cleaner@1.0.0"
-Slick = "revvy02/slick@1.1.0"
+Slick = "revvy02/slick@1.1.1"
 TrueSignal = "revvy02/truesignal@1.0.2"
 MockNetwork = "revvy02/mocknetwork@1.4.3"
 Promise = "evaera/promise@4.0.0"

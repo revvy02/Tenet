@@ -122,7 +122,7 @@ end
     Gets the signal that will be fired for a reducer if it's dispatched
 
     @param reducer string
-    @return Signal
+    @return TrueSignal
 ]=]
 function Card:getReducedSignal(reducer)
     return self:_findSignal(reducer, true)
@@ -131,7 +131,7 @@ end
 --[=[
     Gets the signal that will be fired if the value changes
 
-    @return Signal
+    @return TrueSignal
 ]=]
 function Card:getChangedSignal()
     return self:_findSignal(ChangedKey, true)
