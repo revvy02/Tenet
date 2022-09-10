@@ -89,8 +89,8 @@ function AtomicChannelServer._new(serverBroadcast, host, initialState, reducersM
     ]=]
     self.unsubscribed = self._cleaner:give(TrueSignal.new())
 
-    self._cleaner:give(self._store.reduced:connect(function(key, reducer, ...)
-        self._serverBroadcast._serverSignal:fireClients(self:getSubscribers(), "dispatch", self._host, key, reducer, ...)
+    self._cleaner:give(self._store.reduced:connect(function(reducer, key, ...)
+        self._serverBroadcast._serverSignal:fireClients(self:getSubscribers(), "dispatch", self._host, reducer, key, ...)
     end))
 
     self._serverBroadcast._channelCleaner:set(host, self, AtomicChannelServer._destroy)
@@ -157,8 +157,8 @@ end
     @param reducer string
     @param ... any
 ]=]
-function AtomicChannelServer:dispatch(key, reducer, ...)
-    self._store:dispatch(key, reducer, ...)
+function AtomicChannelServer:dispatch(reducer, key, ...)
+    self._store:dispatch(reducer, key, ...)
 end
 
 --[=[
@@ -188,8 +188,8 @@ end
     @param reducer string
     @return TrueSignal
 ]=]
-function AtomicChannelServer:getReducedSignal(key, reducer)
-    return self._store:getReducedSignal(key, reducer)
+function AtomicChannelServer:getReducedSignal(reducer, key)
+    return self._store:getReducedSignal(reducer, key)
 end
 
 return AtomicChannelServer

@@ -81,14 +81,14 @@ end
 function ClientNetwork:createClientSignalAsync(name, options)
     assert(self._store:getValue("clientSignals")[name] == nil, string.format("%s is already an existing ClientSignal", name))
 
-    self._store:dispatch("clientSignals", "setIndex", name, false)
+    self._store:dispatch("setIndex", "clientSignals", name, false)
 
     return self._signalsFolderPromise:andThen(function(signalsFolder)
         return signalsFolder:WaitForChild(name)
     end):andThen(function(remoteEvent)
         local clientSignal = self._cleaner:give(ClientSignal.new(remoteEvent, options), ClientSignal._destroy)
 
-        self._store:dispatch("clientSignals", "setIndex", name, clientSignal)
+        self._store:dispatch("setIndex", "clientSignals", name, clientSignal)
 
         return clientSignal
     end)
@@ -105,7 +105,7 @@ function ClientNetwork:getClientSignalAsync(name)
         return Promise.resolve(self._store:getValue("clientSignals")[name])
     end
 
-    return Promise.fromEvent(self._store:getReducedSignal("clientSignals", "setIndex"), function(index, value)
+    return Promise.fromEvent(self._store:getReducedSignal("setIndex", "clientSignals"), function(index, value)
         return value and index == name
     end):andThen(function()
         return self._store:getValue("clientSignals")[name]
@@ -122,14 +122,14 @@ end
 function ClientNetwork:createClientCallbackAsync(name, options)
     assert(self._store:getValue("clientCallbacks")[name] == nil, string.format("%s is already an existing ClientCallback", name))
 
-    self._store:dispatch("clientCallbacks", "setIndex", name, false)
+    self._store:dispatch("setIndex", "clientCallbacks", name, false)
 
     return self._callbacksFolderPromise:andThen(function(callbacksFolder)
         return callbacksFolder:WaitForChild(name)
     end):andThen(function(remoteFunction)
         local clientCallback = self._cleaner:give(ClientCallback.new(remoteFunction, options), ClientCallback._destroy)
 
-        self._store:dispatch("clientCallbacks", "setIndex", name, clientCallback)
+        self._store:dispatch("setIndex", "clientCallbacks", name, clientCallback)
 
         return clientCallback
     end)
@@ -146,7 +146,7 @@ function ClientNetwork:getClientCallbackAsync(name)
         return Promise.resolve(self._store:getValue("clientCallbacks")[name])
     end
 
-    return Promise.fromEvent(self._store:getReducedSignal("clientCallbacks", "setIndex"), function(index, value)
+    return Promise.fromEvent(self._store:getReducedSignal("setIndex", "clientCallbacks"), function(index, value)
         return value and index == name
     end):andThen(function()
         return self._store:getValue("clientCallbacks")[name]
@@ -162,14 +162,14 @@ end
 function ClientNetwork:createClientBroadcastAsync(name)
     assert(self._store:getValue("clientBroadcasts")[name] == nil, string.format("%s is already an existing ClientBroadcast", name))
 
-    self._store:dispatch("clientBroadcasts", "setIndex", name, false)
+    self._store:dispatch("setIndex", "clientBroadcasts", name, false)
 
     return self._broadcastsFolderPromise:andThen(function(broadcastsFolder)
         return broadcastsFolder:WaitForChild(name)
     end):andThen(function(broadcastFolder)
         local clientBroadcast = self._cleaner:give(ClientBroadcast.new(broadcastFolder:WaitForChild("RemoteEvent"), broadcastFolder:WaitForChild("RemoteFunction")), ClientBroadcast._destroy)
 
-        self._store:dispatch("clientBroadcasts", "setIndex", name, clientBroadcast)
+        self._store:dispatch("setIndex", "clientBroadcasts", name, clientBroadcast)
 
         return clientBroadcast
     end)
@@ -186,7 +186,7 @@ function ClientNetwork:getClientBroadcastAsync(name)
         return Promise.resolve(self._store:getValue("clientBroadcasts")[name])
     end
 
-    return Promise.fromEvent(self._store:getReducedSignal("clientBroadcasts", "setIndex"), function(index, value)
+    return Promise.fromEvent(self._store:getReducedSignal("setIndex", "clientBroadcasts"), function(index, value)
         return value and index == name
     end):andThen(function()
         return self._store:getValue("clientBroadcasts")[name]

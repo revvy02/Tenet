@@ -449,7 +449,7 @@ return function()
             local changedPromise = ncServer.changed:promise()
             local reducedPromise = ncServer.reduced:promise()
 
-            ncServer:dispatch("xp", "setValue", 2000)
+            ncServer:dispatch("setValue", "xp", 2000)
 
             expect(ncServer:getValue("xp")).to.equal(2000)
 
@@ -457,8 +457,8 @@ return function()
             expect(select(2, changedPromise:expect()).xp).to.equal(2000)
             expect(select(3, changedPromise:expect()).xp).to.equal(1000)
 
-            expect(select(1, reducedPromise:expect())).to.equal("xp")
-            expect(select(2, reducedPromise:expect())).to.equal("setValue")
+            expect(select(1, reducedPromise:expect())).to.equal("setValue")
+            expect(select(2, reducedPromise:expect())).to.equal("xp")
             expect(select(3, reducedPromise:expect())).to.equal(2000)
         end)
 
@@ -485,8 +485,8 @@ return function()
             expect(ncClient:getValue("xp")).to.equal(1000)
             expect(ncClient:getValue("inv")).to.never.be.ok()
 
-            ncServer:dispatch("xp", "setValue", 2000)
-            ncServer:dispatch("inv", "insertValue", "sword")
+            ncServer:dispatch("setValue", "xp", 2000)
+            ncServer:dispatch("insertValue", "inv", "sword")
 
             expect(changedPromise:getStatus()).to.equal(Promise.Status.Resolved)
 
@@ -499,8 +499,8 @@ return function()
 
             ncServer:stream("inv", "user")
 
-            expect(select(1, reducedPromise:expect())).to.equal("xp")
-            expect(select(2, reducedPromise:expect())).to.equal("setValue")
+            expect(select(1, reducedPromise:expect())).to.equal("setValue")
+            expect(select(2, reducedPromise:expect())).to.equal("xp")
             expect(select(3, reducedPromise:expect())).to.equal(2000)
         end)
     end)
@@ -520,8 +520,8 @@ return function()
             expect(ncServer:getValue("xp")).to.equal(0)
             expect(ncServer:getValue("inv")[1]).to.equal(nil)
 
-            ncServer:dispatch("xp", "setValue", 1000)
-            ncServer:dispatch("inv", "insertValue", "gun")
+            ncServer:dispatch("setValue", "xp", 1000)
+            ncServer:dispatch("insertValue", "inv", "gun")
 
             expect(ncServer:getValue("xp")).to.equal(1000)
             expect(ncServer:getValue("inv")[1]).to.equal("gun")
@@ -555,8 +555,8 @@ return function()
             local xpPromise = xpSignal:promise()
             local invPromise = invSignal:promise()
 
-            ncServer:dispatch("xp", "setValue", 1000)
-            ncServer:dispatch("inv", "insertValue", "gun")
+            ncServer:dispatch("setValue", "xp", 1000)
+            ncServer:dispatch("insertValue", "inv", "gun")
 
             expect(select(1, xpPromise:expect())).to.equal(1000)
             expect(select(2, xpPromise:expect())).to.equal(0)
@@ -578,8 +578,8 @@ return function()
                 inv = {},
             })
 
-            local xpSignal = ncServer:getReducedSignal("xp", "setValue")
-            local invSignal = ncServer:getReducedSignal("inv", "insertValue")
+            local xpSignal = ncServer:getReducedSignal("setValue", "xp")
+            local invSignal = ncServer:getReducedSignal("insertValue", "inv")
 
             expect(xpSignal).to.be.a("table")
             expect(getmetatable(xpSignal)).to.equal(TrueSignal)
@@ -593,8 +593,8 @@ return function()
             local xpPromise = xpSignal:promise()
             local invPromise = invSignal:promise()
 
-            ncServer:dispatch("xp", "setValue", 1000)
-            ncServer:dispatch("inv", "insertValue", "gun")
+            ncServer:dispatch("setValue", "xp", 1000)
+            ncServer:dispatch("insertValue", "inv", "gun")
 
             expect(xpPromise:expect()).to.equal(1000)
             expect(invPromise:expect()).to.equal("gun")

@@ -129,8 +129,8 @@ function NonatomicChannelServer._new(serverBroadcast, host, initialState, reduce
     ]=]
     self.unstreamed = self._cleaner:give(TrueSignal.new())
 
-    self._cleaner:give(self._store.reduced:connect(function(key, reducer, ...)
-        self._serverBroadcast._serverSignal:fireClients(self:getStreamedSubscribers(key), "dispatch", self._host, key, reducer, ...)
+    self._cleaner:give(self._store.reduced:connect(function(reducer, key, ...)
+        self._serverBroadcast._serverSignal:fireClients(self:getStreamedSubscribers(key), "dispatch", self._host, reducer, key, ...)
     end))
 
     self._serverBroadcast._channelCleaner:set(host, self, NonatomicChannelServer._destroy)
@@ -290,8 +290,8 @@ end
     @param reducer string
     @param ... any
 ]=]
-function NonatomicChannelServer:dispatch(key, reducer, ...)
-    self._store:dispatch(key, reducer, ...)
+function NonatomicChannelServer:dispatch(reducer, key, ...)
+    self._store:dispatch(reducer, key, ...)
 end
 
 --[=[
@@ -321,8 +321,8 @@ end
     @param reducer string
     @return TrueSignal
 ]=]
-function NonatomicChannelServer:getReducedSignal(key, reducer)
-    return self._store:getReducedSignal(key, reducer)
+function NonatomicChannelServer:getReducedSignal(reducer, key)
+    return self._store:getReducedSignal(reducer, key)
 end
 
 return NonatomicChannelServer

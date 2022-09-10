@@ -52,8 +52,8 @@ end
 
     @private
 ]=]
-function AtomicChannelClient:_dispatch(key, reducer, ...)
-    self._store:dispatch(key, reducer, ...)
+function AtomicChannelClient:_dispatch(reducer, key, ...)
+    self._store:dispatch(reducer, key, ...)
 end
 
 --[=[
@@ -92,8 +92,8 @@ end
     @param reducer string
     @return TrueSignal
 ]=]
-function AtomicChannelClient:getReducedSignal(key, reducer)
-    return self._store:getReducedSignal(key, reducer)
+function AtomicChannelClient:getReducedSignal(reducer, key)
+    return self._store:getReducedSignal(reducer, key)
 end
 
 return AtomicChannelClient

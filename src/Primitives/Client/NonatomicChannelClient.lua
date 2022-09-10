@@ -76,8 +76,8 @@ end
 
     @private
 ]=]
-function NonatomicChannelClient:_dispatch(key, reducer, ...)
-    self._store:dispatch(key, reducer, ...)
+function NonatomicChannelClient:_dispatch(reducer, key, ...)
+    self._store:dispatch(reducer, key, ...)
 end
 
 --[=[
@@ -89,7 +89,7 @@ end
     @private
 ]=]
 function NonatomicChannelClient:_stream(key, value)
-    self._store:dispatch(key, "setValue", value)
+    self._store:dispatch("setValue", key, value)
     self._loaded[key] = true
     self.streamed:fire(key, value)
 end
@@ -102,7 +102,7 @@ end
     @private
 ]=]
 function NonatomicChannelClient:_unstream(key)
-    self._store:dispatch(key, "setValue", nil)
+    self._store:dispatch("setValue", key, nil)
     self._loaded[key] = nil
     self.unstreamed:fire(key)
 end
@@ -143,8 +143,8 @@ end
     @param reducer string
     @return TrueSignal
 ]=]
-function NonatomicChannelClient:getReducedSignal(key, reducer)
-    return self._store:getReducedSignal(key, reducer)
+function NonatomicChannelClient:getReducedSignal(reducer, key)
+    return self._store:getReducedSignal(reducer, key)
 end
 
 return NonatomicChannelClient

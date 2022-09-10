@@ -28,8 +28,8 @@ return function()
             expect(ncClient:getValue("xp")).to.equal(0)
             expect(ncClient:getValue("inv")[1]).to.equal(nil)
 
-            ncServer:dispatch("xp", "setValue", 1000)
-            ncServer:dispatch("inv", "insertValue", "gun")
+            ncServer:dispatch("setValue", "xp", 1000)
+            ncServer:dispatch("insertValue", "inv", "gun")
 
             expect(ncClient:getValue("xp")).to.equal(1000)
             expect(ncClient:getValue("inv")[1]).to.equal("gun")
@@ -71,8 +71,8 @@ return function()
             local xpPromise = xpSignal:promise()
             local invPromise = invSignal:promise()
 
-            ncServer:dispatch("xp", "setValue", 1000)
-            ncServer:dispatch("inv", "insertValue", "gun")
+            ncServer:dispatch("setValue", "xp", 1000)
+            ncServer:dispatch("insertValue", "inv", "gun")
 
             expect(select(1, xpPromise:expect())).to.equal(1000)
             expect(select(2, xpPromise:expect())).to.equal(0)
@@ -102,8 +102,8 @@ return function()
             
             local ncClient = clientBroadcast:getChannel("store")
 
-            local xpSignal = ncClient:getReducedSignal("xp", "setValue")
-            local invSignal = ncClient:getReducedSignal("inv", "insertValue")
+            local xpSignal = ncClient:getReducedSignal("setValue", "xp")
+            local invSignal = ncClient:getReducedSignal("insertValue", "inv")
 
             expect(xpSignal).to.be.a("table")
             expect(getmetatable(xpSignal)).to.equal(TrueSignal)
@@ -117,8 +117,8 @@ return function()
             local xpPromise = xpSignal:promise()
             local invPromise = invSignal:promise()
 
-            ncServer:dispatch("xp", "setValue", 1000)
-            ncServer:dispatch("inv", "insertValue", "gun")
+            ncServer:dispatch("setValue", "xp", 1000)
+            ncServer:dispatch("insertValue", "inv", "gun")
 
             expect(xpPromise:expect()).to.equal(1000)
             expect(invPromise:expect()).to.equal("gun")

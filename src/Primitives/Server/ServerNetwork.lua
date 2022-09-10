@@ -90,7 +90,7 @@ function ServerNetwork:createServerSignal(name, options)
     remoteEvent.Name = name
     remoteEvent.Parent = self._signalsFolder
 
-    self._store:dispatch("serverSignals", "setIndex", name, self._cleaner:give(ServerSignal.new(remoteEvent, options and {
+    self._store:dispatch("setIndex", "serverSignals", name, self._cleaner:give(ServerSignal.new(remoteEvent, options and {
         log = options.log or self._log,
         inbound = options.inbound,
         outbound = options.outbound,
@@ -110,7 +110,7 @@ function ServerNetwork:getServerSignalAsync(name)
         return Promise.resolve(self._store:getValue("serverSignals")[name])
     end
 
-    return Promise.fromEvent(self._store:getReducedSignal("serverSignals", "setIndex"), function(index)
+    return Promise.fromEvent(self._store:getReducedSignal("setIndex", "serverSignals"), function(index)
         return index == name
     end):andThen(function()
         return self._store:getValue("serverSignals")[name]
@@ -131,7 +131,7 @@ function ServerNetwork:createServerCallback(name, options)
     remoteFunction.Name = name
     remoteFunction.Parent = self._callbacksFolder
 
-    self._store:dispatch("serverCallbacks", "setIndex", name, self._cleaner:give(ServerCallback.new(remoteFunction, options and {
+    self._store:dispatch("setIndex", "serverCallbacks", name, self._cleaner:give(ServerCallback.new(remoteFunction, options and {
         log = options.log or self._log,
         inbound = options.inbound,
         outbound = options.outbound,
@@ -151,7 +151,7 @@ function ServerNetwork:getServerCallbackAsync(name)
         return Promise.resolve(self._store:getValue("serverCallbacks")[name])
     end
 
-    return Promise.fromEvent(self._store:getReducedSignal("serverCallbacks", "setIndex"), function(index)
+    return Promise.fromEvent(self._store:getReducedSignal("setIndex", "serverCallbacks"), function(index)
         return index == name
     end):andThen(function()
         return self._store:getValue("serverCallbacks")[name]
@@ -177,7 +177,7 @@ function ServerNetwork:createServerBroadcast(name, options)
     remoteFunction.Parent = folder
     folder.Parent = self._broadcastsFolder
 
-    self._store:dispatch("serverBroadcasts", "setIndex", name, self._cleaner:give(ServerBroadcast.new(remoteEvent, remoteFunction, options and {
+    self._store:dispatch("setIndex", "serverBroadcasts", name, self._cleaner:give(ServerBroadcast.new(remoteEvent, remoteFunction, options and {
         log = options.log or self._log,
         module = options.module,
     }), ServerBroadcast._destroy))
@@ -196,7 +196,7 @@ function ServerNetwork:getServerBroadcastAsync(name)
         return Promise.resolve(self._store:getValue("serverBroadcasts")[name])
     end
     
-    return Promise.fromEvent(self._store:getReducedSignal("serverBroadcasts", "setIndex"), function(index)
+    return Promise.fromEvent(self._store:getReducedSignal("setIndex", "serverBroadcasts"), function(index)
         return index == name
     end):andThen(function()
         return self._store:getValue("serverBroadcasts")[name]

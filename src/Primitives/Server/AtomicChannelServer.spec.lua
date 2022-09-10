@@ -203,7 +203,7 @@ return function()
             local changedPromise = acServer.changed:promise()
             local reducedPromise = acServer.reduced:promise()
 
-            acServer:dispatch("xp", "setValue", 2000)
+            acServer:dispatch("setValue", "xp", 2000)
 
             expect(acServer:getValue("xp")).to.equal(2000)
 
@@ -211,8 +211,8 @@ return function()
             expect(select(2, changedPromise:expect()).xp).to.equal(2000)
             expect(select(3, changedPromise:expect()).xp).to.equal(1000)
 
-            expect(select(1, reducedPromise:expect())).to.equal("xp")
-            expect(select(2, reducedPromise:expect())).to.equal("setValue")
+            expect(select(1, reducedPromise:expect())).to.equal("setValue")
+            expect(select(2, reducedPromise:expect())).to.equal("xp")
             expect(select(3, reducedPromise:expect())).to.equal(2000)
         end)
 
@@ -235,7 +235,7 @@ return function()
             local changedPromise = acClient.changed:promise()
             local reducedPromise = acClient.reduced:promise()
 
-            acServer:dispatch("xp", "setValue", 2000)
+            acServer:dispatch("setValue", "xp", 2000)
 
             expect(acServer:getValue("xp")).to.equal(2000)
 
@@ -243,8 +243,8 @@ return function()
             expect(select(2, changedPromise:expect()).xp).to.equal(2000)
             expect(select(3, changedPromise:expect()).xp).to.equal(1000)
 
-            expect(select(1, reducedPromise:expect())).to.equal("xp")
-            expect(select(2, reducedPromise:expect())).to.equal("setValue")
+            expect(select(1, reducedPromise:expect())).to.equal("setValue")
+            expect(select(2, reducedPromise:expect())).to.equal("xp")
             expect(select(3, reducedPromise:expect())).to.equal(2000)
         end)
     end)
@@ -264,8 +264,8 @@ return function()
             expect(acServer:getValue("xp")).to.equal(0)
             expect(acServer:getValue("inv")[1]).to.equal(nil)
 
-            acServer:dispatch("xp", "setValue", 1000)
-            acServer:dispatch("inv", "insertValue", "gun")
+            acServer:dispatch("setValue", "xp", 1000)
+            acServer:dispatch("insertValue", "inv", "gun")
 
             expect(acServer:getValue("xp")).to.equal(1000)
             expect(acServer:getValue("inv")[1]).to.equal("gun")
@@ -301,8 +301,8 @@ return function()
             local xpPromise = xpSignal:promise()
             local invPromise = invSignal:promise()
 
-            acServer:dispatch("xp", "setValue", 1000)
-            acServer:dispatch("inv", "insertValue", "gun")
+            acServer:dispatch("setValue", "xp", 1000)
+            acServer:dispatch("insertValue", "inv", "gun")
 
             expect(select(1, xpPromise:expect())).to.equal(1000)
             expect(select(2, xpPromise:expect())).to.equal(0)
@@ -326,8 +326,8 @@ return function()
 
             acServer:subscribe("user")
 
-            local xpSignal = acServer:getReducedSignal("xp", "setValue")
-            local invSignal = acServer:getReducedSignal("inv", "insertValue")
+            local xpSignal = acServer:getReducedSignal("setValue", "xp")
+            local invSignal = acServer:getReducedSignal("insertValue", "inv")
 
             expect(xpSignal).to.be.a("table")
             expect(getmetatable(xpSignal)).to.equal(TrueSignal)
@@ -341,8 +341,8 @@ return function()
             local xpPromise = xpSignal:promise()
             local invPromise = invSignal:promise()
 
-            acServer:dispatch("xp", "setValue", 1000)
-            acServer:dispatch("inv", "insertValue", "gun")
+            acServer:dispatch("setValue", "xp", 1000)
+            acServer:dispatch("insertValue", "inv", "gun")
 
             expect(xpPromise:expect()).to.equal(1000)
             expect(invPromise:expect()).to.equal("gun")

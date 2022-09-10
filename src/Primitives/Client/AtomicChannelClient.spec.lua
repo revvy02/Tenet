@@ -25,8 +25,8 @@ return function()
             expect(acClient:getValue("xp")).to.equal(0)
             expect(acClient:getValue("inv")[1]).to.equal(nil)
 
-            acServer:dispatch("xp", "setValue", 1000)
-            acServer:dispatch("inv", "insertValue", "gun")
+            acServer:dispatch("setValue", "xp", 1000)
+            acServer:dispatch("insertValue", "inv", "gun")
 
             expect(acClient:getValue("xp")).to.equal(1000)
             expect(acClient:getValue("inv")[1]).to.equal("gun")
@@ -65,8 +65,8 @@ return function()
             local xpPromise = xpSignal:promise()
             local invPromise = invSignal:promise()
 
-            ssServer:dispatch("xp", "setValue", 1000)
-            ssServer:dispatch("inv", "insertValue", "gun")
+            ssServer:dispatch("setValue", "xp",  1000)
+            ssServer:dispatch("insertValue", "inv", "gun")
 
             expect(select(1, xpPromise:expect())).to.equal(1000)
             expect(select(2, xpPromise:expect())).to.equal(0)
@@ -93,8 +93,8 @@ return function()
 
             local ssClient = clientBroadcast:getChannel("store")
 
-            local xpSignal = ssClient:getReducedSignal("xp", "setValue")
-            local invSignal = ssClient:getReducedSignal("inv", "insertValue")
+            local xpSignal = ssClient:getReducedSignal("setValue", "xp")
+            local invSignal = ssClient:getReducedSignal("insertValue", "inv")
 
             expect(xpSignal).to.be.a("table")
             expect(getmetatable(xpSignal)).to.equal(TrueSignal)
@@ -108,8 +108,8 @@ return function()
             local xpPromise = xpSignal:promise()
             local invPromise = invSignal:promise()
 
-            ssServer:dispatch("xp", "setValue", 1000)
-            ssServer:dispatch("inv", "insertValue", "gun")
+            ssServer:dispatch("setValue", "xp", 1000)
+            ssServer:dispatch("insertValue", "inv", "gun")
 
             expect(xpPromise:expect()).to.equal(1000)
             expect(invPromise:expect()).to.equal("gun")

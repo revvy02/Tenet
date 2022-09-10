@@ -10,8 +10,10 @@ local AtomicChannelClient = require(script.Parent.AtomicChannelClient)
 local NonatomicChannelClient = require(script.Parent.NonatomicChannelClient)
 
 local handlers = {
-    dispatch = function(self, _, host, key, reducer, ...)
-        self:getChannel(host):_dispatch(key, reducer, ...)
+    dispatch = function(self, _, host, reducer, key, ...)
+        print(debug.traceback())
+        print(reducer, key, ...)
+        self:getChannel(host):_dispatch(reducer, key, ...)
     end,
 
     stream = function(self, _, host, key, value)
