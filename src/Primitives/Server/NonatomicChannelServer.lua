@@ -36,6 +36,10 @@ end
     @private
 ]=]
 function NonatomicChannelServer:_destroy()
+    self._serverBroadcast._hosts = table.clone(self._serverBroadcast._hosts)
+    table.remove(self._serverBroadcast._hosts, table.find(self._serverBroadcast._hosts, self._host))
+    table.freeze(self._serverBroadcast._hosts)
+
     for _, player in self:getSubscribers() do
         self:unsubscribe(player)
     end
@@ -132,6 +136,10 @@ function NonatomicChannelServer._new(serverBroadcast, host, initialState, reduce
     self._cleaner:give(self._store.reduced:connect(function(reducer, key, ...)
         self._serverBroadcast._serverSignal:fireClients(self:getStreamedSubscribers(key), "dispatch", self._host, reducer, key, ...)
     end))
+
+    self._serverBroadcast._hosts = table.clone(self._serverBroadcast._hosts)
+    table.insert(self._serverBroadcast._hosts, host)
+    table.freeze(self._serverBroadcast._hosts)
 
     self._serverBroadcast._channelCleaner:set(host, self, NonatomicChannelServer._destroy)
     self._serverBroadcast.created:fire(host, self)

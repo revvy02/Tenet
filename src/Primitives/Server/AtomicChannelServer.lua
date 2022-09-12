@@ -16,6 +16,10 @@ AtomicChannelServer.__index = AtomicChannelServer
     @private
 ]=]
 function AtomicChannelServer:_destroy()
+    self._serverBroadcast._hosts = table.clone(self._serverBroadcast._hosts)
+    table.remove(self._serverBroadcast._hosts, table.find(self._serverBroadcast._hosts, self._host))
+    table.freeze(self._serverBroadcast._hosts)
+
     for _, player in self:getSubscribers() do
         self:unsubscribe(player)
     end
@@ -92,6 +96,10 @@ function AtomicChannelServer._new(serverBroadcast, host, initialState, reducersM
     self._cleaner:give(self._store.reduced:connect(function(reducer, key, ...)
         self._serverBroadcast._serverSignal:fireClients(self:getSubscribers(), "dispatch", self._host, reducer, key, ...)
     end))
+
+    self._serverBroadcast._hosts = table.clone(self._serverBroadcast._hosts)
+    table.insert(self._serverBroadcast._hosts, host)
+    table.freeze(self._serverBroadcast._hosts)
 
     self._serverBroadcast._channelCleaner:set(host, self, AtomicChannelServer._destroy)
     self._serverBroadcast.created:fire(host, self)

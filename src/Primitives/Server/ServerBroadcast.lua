@@ -31,6 +31,8 @@ function ServerBroadcast.new(remoteEvent, remoteFunction, options)
 
     self._defaultReducersModule = options and options.module or Reducers.Mixed
     
+    self._hosts = table.freeze({})
+
     self._cleaner = Cleaner.new()
     self._channelCleaner = Cleaner.new()
 
@@ -117,6 +119,16 @@ end
 ]=]
 function ServerBroadcast:getChannel(host)
     return self._channelCleaner:get(host)
+end
+
+--[=[
+    Returns a list of existing hosts with channels
+
+    @param host any
+    @return AtomicChannelServer | NonatomicChannelServer
+]=]
+function ServerBroadcast:getHosts()
+    return self._hosts
 end
 
 --[=[

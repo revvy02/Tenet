@@ -398,4 +398,37 @@ return function()
             expect(serverBroadcast:getChannel("store")).to.equal(acServer)
         end)
     end)
+
+    describe("ServerBroadcast:getHosts", function()
+        it("should return a list of all existing hosts", function()
+            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
+
+            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
+
+            serverBroadcast:createAtomicChannel("host1")
+            serverBroadcast:createNonatomicChannel("host2")
+            serverBroadcast:createAtomicChannel(1)
+
+            local hosts = serverBroadcast:getHosts()
+
+            expect(table.find(hosts, "host1")).to.be.ok()
+            expect(table.find(hosts, "host2")).to.be.ok()
+            expect(table.find(hosts, "host3")).to.never.be.ok()
+            expect(table.find(hosts, 1)).to.be.ok()
+
+            expect(#hosts).to.equal(3)
+        end)
+
+        it("should return a list that's frozen", function()
+            local mockRemoteEvent = MockNetwork.MockRemoteEvent.new("user")
+            local mockRemoteFunction = MockNetwork.MockRemoteFunction.new("user")
+
+            local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
+
+            local hosts = serverBroadcast:getHosts()
+
+            expect(table.isfrozen(hosts)).to.equal(true)
+        end)
+    end)
 end
