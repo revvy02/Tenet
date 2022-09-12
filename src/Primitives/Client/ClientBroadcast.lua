@@ -25,11 +25,11 @@ local handlers = {
     end,
 
     nonatomic = function(self, defaultReducers, host, initial, customReducers)
-        self.subscribed:fire(host, self._cleaner:set(host, NonatomicChannelClient._new(initial, customReducers and require(customReducers) or defaultReducers and require(defaultReducers)), NonatomicChannelClient._destroy))
+        self.subscribed:fire(host, self._cleaner:set(host, NonatomicChannelClient._new(self, host, initial, customReducers and require(customReducers) or defaultReducers and require(defaultReducers)), NonatomicChannelClient._destroy))
     end,
 
     atomic = function(self, defaultReducers, host, initial, customReducers)
-        self.subscribed:fire(host, self._cleaner:set(host, AtomicChannelClient._new(initial, customReducers and require(customReducers) or defaultReducers and require(defaultReducers)), AtomicChannelClient._destroy))
+        self.subscribed:fire(host, self._cleaner:set(host, AtomicChannelClient._new(self, host, initial, customReducers and require(customReducers) or defaultReducers and require(defaultReducers)), AtomicChannelClient._destroy))
     end,
 
     unsubscribe = function(self, _, host)
@@ -65,6 +65,8 @@ end
 ]=]
 function ClientBroadcast.new(remoteEvent, remoteFunction)
     local self = setmetatable({}, ClientBroadcast)
+
+    self._hosts = table.freeze({})
 
     self._cleaner = Cleaner.new()
 
@@ -113,6 +115,15 @@ end
 ]=]
 function ClientBroadcast:getChannel(host)
     return self._cleaner:get(host)
+end
+
+--[=[
+    Returns a list of channel hosts that are subscribed
+
+    @return {...any}
+]=]
+function ClientBroadcast:getHosts()
+    return self._hosts
 end
 
 return ClientBroadcast

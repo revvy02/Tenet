@@ -406,16 +406,16 @@ return function()
 
             local serverBroadcast = ServerBroadcast.new(mockRemoteEvent, mockRemoteFunction)
 
-            serverBroadcast:createAtomicChannel("host1")
-            serverBroadcast:createNonatomicChannel("host2")
-            serverBroadcast:createAtomicChannel(1)
+            serverBroadcast:createAtomicChannel("a")
+            serverBroadcast:createNonatomicChannel("b")
+            serverBroadcast:createAtomicChannel("c")
 
             local hosts = serverBroadcast:getHosts()
 
-            expect(table.find(hosts, "host1")).to.be.ok()
-            expect(table.find(hosts, "host2")).to.be.ok()
-            expect(table.find(hosts, "host3")).to.never.be.ok()
-            expect(table.find(hosts, 1)).to.be.ok()
+            expect(table.find(hosts, "a")).to.be.ok()
+            expect(table.find(hosts, "b")).to.be.ok()
+            expect(table.find(hosts, "c")).to.be.ok()
+            expect(table.find(hosts, "d")).to.never.be.ok()
 
             expect(#hosts).to.equal(3)
         end)

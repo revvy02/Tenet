@@ -17,8 +17,11 @@ AtomicChannelClient.__index = AtomicChannelClient
 
     @private
 ]=]
-function AtomicChannelClient._new(initial, reducers)
+function AtomicChannelClient._new(clientBroadcast, host, initial, reducers)
     local self = setmetatable({}, AtomicChannelClient)
+
+    self._clientBroadcast = clientBroadcast
+    self._host = host
 
     self._store = Slick.Store.new(initial, reducers)
 
@@ -39,6 +42,10 @@ function AtomicChannelClient._new(initial, reducers)
         @within AtomicChannelClient
     ]=]
     self.changed = self._store.changed
+
+    self._clientBroadcast._hosts = table.clone(self._clientBroadcast._hosts)
+    table.insert(self._clientBroadcast._hosts, host)
+    table.freeze(self._clientBroadcast._hosts)
 
     return self
 end
@@ -62,6 +69,10 @@ end
     @private
 ]=]
 function AtomicChannelClient:_destroy()
+    self._clientBroadcast._hosts = table.clone(self._clientBroadcast._hosts)
+    table.remove(self._clientBroadcast._hosts, table.find(self._clientBroadcast._hosts, self._host))
+    table.freeze(self._clientBroadcast._hosts)
+
     self._store:destroy()
 end
 

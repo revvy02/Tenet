@@ -20,8 +20,11 @@ NonatomicChannelClient.__index = NonatomicChannelClient
 
     @private
 ]=]
-function NonatomicChannelClient._new(initial, reducers)
+function NonatomicChannelClient._new(clientBroadcast, host, initial, reducers)
     local self = setmetatable({}, NonatomicChannelClient)
+
+    self._clientBroadcast = clientBroadcast
+    self._host = host
 
     self._cleaner = Cleaner.new()
     self._store = self._cleaner:give(Slick.Store.new(initial, reducers))
@@ -63,6 +66,10 @@ function NonatomicChannelClient._new(initial, reducers)
         @within NonatomicChannelServer
     ]=]
     self.unstreamed = self._cleaner:give(TrueSignal.new())
+
+    self._clientBroadcast._hosts = table.clone(self._clientBroadcast._hosts)
+    table.insert(self._clientBroadcast._hosts, host)
+    table.freeze(self._clientBroadcast._hosts)
 
     return self
 end
@@ -113,6 +120,10 @@ end
     @private
 ]=]
 function NonatomicChannelClient:_destroy()
+    self._clientBroadcast._hosts = table.clone(self._clientBroadcast._hosts)
+    table.remove(self._clientBroadcast._hosts, table.find(self._clientBroadcast._hosts, self._host))
+    table.freeze(self._clientBroadcast._hosts)
+
     self._cleaner:destroy()
 end
 
