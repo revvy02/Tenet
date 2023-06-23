@@ -9,9 +9,7 @@ local ServerSignal = require(script.Parent.ServerSignal)
 local ServerCallback = require(script.Parent.ServerCallback)
 local ServerBroadcast = require(script.Parent.ServerBroadcast)
 
-local holder = Instance.new("Folder")
-holder.Name = "Stellar"
-holder.Parent = ReplicatedStorage
+local holder
 
 --[=[
     Server class for holding network primitives
@@ -37,6 +35,12 @@ end
     @return ServerNetwork
 ]=]
 function ServerNetwork.new(name)
+    if not holder then
+        holder = Instance.new("Folder")
+        holder.Name = "Tenet"
+        holder.Parent = ReplicatedStorage
+    end
+
     assert(not holder:FindFirstChild(name), string.format("%s is already an existing ServerNetwork", name))
 
     local self = setmetatable({}, ServerNetwork)

@@ -9,7 +9,7 @@ local ClientCallback = require(script.Parent.ClientCallback)
 local ClientBroadcast = require(script.Parent.ClientBroadcast)
 
 local holderPromise = Promise.try(function()
-    return ReplicatedStorage:WaitForChild("Stellar")
+    return ReplicatedStorage:WaitForChild("Tenet")
 end)
 
 --[=[
